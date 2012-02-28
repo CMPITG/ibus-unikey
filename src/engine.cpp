@@ -14,7 +14,9 @@
 #include "unikey.h"
 #include "vnconv.h"
 
-#if !IBUS_CHECK_VERSION(1,2,99) // ibus below version 1.2.99 have problem with PROP_TYPE_NORMAL, use RADIO instead
+// ibus below version 1.2.99 have problem with PROP_TYPE_NORMAL, use
+// RADIO instead
+#if !IBUS_CHECK_VERSION(1,2,99)
 #define PROP_TYPE_NORMAL PROP_TYPE_RADIO
 #endif
 
@@ -22,27 +24,31 @@
 
 #define CONVERT_BUF_SIZE 1024
 
-const gchar*          Unikey_IMNames[]    = {"Telex", "Vni", "STelex", "STelex2"};
-const UkInputMethod   Unikey_IM[]         = {UkTelex, UkVni, UkSimpleTelex, UkSimpleTelex2};
-const unsigned int    NUM_INPUTMETHOD     = sizeof(Unikey_IM)/sizeof(Unikey_IM[0]);
+const gchar*          Unikey_IMNames[]   = { "Telex", "Vni", "STelex",
+                                             "STelex2" };
+const UkInputMethod   Unikey_IM[]        = { UkTelex, UkVni, UkSimpleTelex,
+                                             UkSimpleTelex2 };
+const unsigned int    NUM_INPUTMETHOD    =
+    sizeof (Unikey_IM) / sizeof (Unikey_IM[0]);
 
-const gchar*          Unikey_OCNames[]    = {"Unicode",
+const gchar*          Unikey_OCNames[]   = { "Unicode",
                                              "TCVN3",
                                              "VNI Win",
                                              "VIQR",
                                              "BK HCM 2",
                                              "CString",
                                              "NCR Decimal",
-                                             "NCR Hex"};
-const unsigned int    Unikey_OC[]         = {CONV_CHARSET_XUTF8,
+                                             "NCR Hex" };
+const unsigned int    Unikey_OC[]        = { CONV_CHARSET_XUTF8,
                                              CONV_CHARSET_TCVN3,
                                              CONV_CHARSET_VNIWIN,
                                              CONV_CHARSET_VIQR,
                                              CONV_CHARSET_BKHCM2,
                                              CONV_CHARSET_UNI_CSTRING,
                                              CONV_CHARSET_UNIREF,
-                                             CONV_CHARSET_UNIREF_HEX};
-const unsigned int    NUM_OUTPUTCHARSET   = sizeof(Unikey_OC)/sizeof(Unikey_OC[0]);
+                                             CONV_CHARSET_UNIREF_HEX };
+const unsigned int    NUM_OUTPUTCHARSET  =
+    sizeof (Unikey_OC) / sizeof (Unikey_OC[0]);
 
 static unsigned char WordBreakSyms[] =
 {
@@ -984,9 +990,9 @@ static void* thread_mouse_capture(void* data)
 static void* thread_run_setup(void* data)
 {
     int stat;
-    
-    popen(LIBEXECDIR "/ibus-setup-unikey --engine", "r");
-    wait(&stat);
+
+    popen (LIBEXECDIR "/ibus-setup-unikey --engine", "r");
+    wait (&stat);
     if (stat == 0)
         ibus_quit();
     return NULL;
