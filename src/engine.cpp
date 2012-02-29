@@ -587,37 +587,38 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey)
     label = ibus_text_new_from_static_string (_("Capture mouse event"));
     tooltip = ibus_text_new_from_static_string (_("Auto send PreEdit string to Application when mouse move or click"));
     prop = ibus_property_new (CONFIG_MOUSECAPTURE,
-                             PROP_TYPE_TOGGLE,
-                             label,
-                             "",
-                             tooltip,
-                             TRUE,
-                             TRUE,
-                             (unikey->mouse_capture==1)?
-                             PROP_STATE_CHECKED:PROP_STATE_UNCHECKED,
-                             NULL);
+                              PROP_TYPE_TOGGLE,
+                              label,
+                              "",
+                              tooltip,
+                              TRUE,
+                              TRUE,
+                              (unikey->mouse_capture == 1) ?
+                              PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
+                              NULL);
 
     ibus_prop_list_append (unikey->menu_opt, prop);
 
 
     // --separator
     prop = ibus_property_new ("", PROP_TYPE_SEPARATOR,
-                             NULL, "", NULL, TRUE, TRUE,
-                             PROP_STATE_UNCHECKED, NULL);
+                              NULL, "", NULL, TRUE, TRUE,
+                              PROP_STATE_UNCHECKED, NULL);
     ibus_prop_list_append (unikey->menu_opt, prop);
 
     // --create and add Launch Setup GUI property
     label = ibus_text_new_from_static_string (_("Full setup..."));
-    tooltip = ibus_text_new_from_static_string (_("Full setup utility for IBus-Unikey"));
+    tooltip = ibus_text_new_from_static_string
+        (_("Full setup utility for IBus-Unikey"));
     prop = ibus_property_new ("RunSetupGUI",
-                             PROP_TYPE_NORMAL,
-                             label,
-                             "",
-                             tooltip,
-                             TRUE,
-                             TRUE,
-                             PROP_STATE_UNCHECKED,
-                             NULL);
+                              PROP_TYPE_NORMAL,
+                              label,
+                              "",
+                              tooltip,
+                              TRUE,
+                              TRUE,
+                              PROP_STATE_UNCHECKED,
+                              NULL);
 
     ibus_prop_list_append (unikey->menu_opt, prop);
 // END create option menu
@@ -633,34 +634,32 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey)
     label = ibus_text_new_from_static_string (Unikey_IMNames[i]);
     tooltip = ibus_text_new_from_static_string (_("Choose input method"));
     prop = ibus_property_new (CONFIG_INPUTMETHOD,
-                             PROP_TYPE_MENU,
-                             label,
-                             "",
-                             tooltip,
-                             TRUE,
-                             TRUE,
-                             PROP_STATE_UNCHECKED,
-                             unikey->menu_im);
+                              PROP_TYPE_MENU,
+                              label,
+                              "",
+                              tooltip,
+                              TRUE,
+                              TRUE,
+                              PROP_STATE_UNCHECKED,
+                              unikey->menu_im);
 
     ibus_prop_list_append (unikey->prop_list, prop);
-
     // -- add output charset menu
     for (i = 0; i < NUM_OUTPUTCHARSET; i++)
-    {
         if (Unikey_OC[i] == unikey->oc)
             break;
-    }
+
     label = ibus_text_new_from_static_string (Unikey_OCNames[i]);
     tooltip = ibus_text_new_from_static_string (_("Choose output charset"));
     prop = ibus_property_new (CONFIG_OUTPUTCHARSET,
-                             PROP_TYPE_MENU,
-                             label,
-                             "",
-                             tooltip,
-                             TRUE,
-                             TRUE,
-                             PROP_STATE_UNCHECKED,
-                             unikey->menu_oc);
+                              PROP_TYPE_MENU,
+                              label,
+                              "",
+                              tooltip,
+                              TRUE,
+                              TRUE,
+                              PROP_STATE_UNCHECKED,
+                              unikey->menu_oc);
 
     ibus_prop_list_append (unikey->prop_list, prop);
 
@@ -668,14 +667,14 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey)
     label = ibus_text_new_from_static_string (_("Options"));
     tooltip = ibus_text_new_from_static_string (_("Options for Unikey"));
     prop = ibus_property_new ("Options",
-                             PROP_TYPE_MENU,
-                             label,
-                             "gtk-preferences",
-                             tooltip,
-                             TRUE,
-                             TRUE,
-                             PROP_STATE_UNCHECKED,
-                             unikey->menu_opt);
+                              PROP_TYPE_MENU,
+                              label,
+                              "gtk-preferences",
+                              tooltip,
+                              TRUE,
+                              TRUE,
+                              PROP_STATE_UNCHECKED,
+                              unikey->menu_opt);
 
     ibus_prop_list_append (unikey->prop_list, prop);
 // end top menu
@@ -702,11 +701,8 @@ static void ibus_unikey_engine_update_preedit_string
     text = ibus_text_new_from_static_string (string);
 
     // underline text
-    //if (!unikey->mouse_capture)
-    {
-        ibus_text_append_attribute (text, IBUS_ATTR_TYPE_UNDERLINE,
-                                    IBUS_ATTR_UNDERLINE_SINGLE, 0, -1);
-    }
+    ibus_text_append_attribute (text, IBUS_ATTR_TYPE_UNDERLINE,
+                                IBUS_ATTR_UNDERLINE_SINGLE, 0, -1);
 
     // update and display text
     ibus_engine_update_preedit_text (engine, text,
@@ -801,6 +797,7 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
              || (keyval >= IBUS_Home && keyval <= IBUS_Insert)
              || (keyval >= IBUS_KP_Home && keyval <= IBUS_KP_Delete))
     {
+        // cmpitg: a word is committed
         ibus_unikey_engine_reset (engine);
         return false;
 
@@ -834,6 +831,7 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
             }
             else
             {
+                // DEBUG
                 ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
                 ibus_unikey_engine_update_preedit_string
                     (engine, unikey->preeditstr->c_str (), true);
@@ -857,6 +855,7 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
                         ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
                 }
 
+                // DEBUG
                 unikey->auto_commit = false;
                 ibus_unikey_engine_update_preedit_string
                     (engine, unikey->preeditstr->c_str (), true);
@@ -911,8 +910,10 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
             }
             else
             {
-                unikey->preeditstr->append (keyval==IBUS_w?"w":"W");
-                ibus_unikey_engine_update_preedit_string (engine, unikey->preeditstr->c_str (), true);
+                // DEBUG
+                unikey->preeditstr->append (keyval == IBUS_w ? "w" : "W");
+                ibus_unikey_engine_update_preedit_string
+                    (engine, unikey->preeditstr->c_str (), true);
                 return true;
             }
         }
@@ -989,9 +990,9 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
         }
         // end commit string
 
-        ibus_unikey_engine_update_preedit_string (engine,
-                                                  unikey->preeditstr->c_str (),
-                                                  true);
+        // DEBUG
+        ibus_unikey_engine_update_preedit_string
+            (engine, unikey->preeditstr->c_str (), true);
         return true;
     } // end capture printable char
 
