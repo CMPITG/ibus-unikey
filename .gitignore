@@ -2,4 +2,5 @@ autom4te.cache/**
 setup/.deps/**
 src/.deps/**
 ukengine/.deps/**
+ukengine/.libs/**
 Notes.md

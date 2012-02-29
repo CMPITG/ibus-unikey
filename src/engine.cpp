@@ -14,6 +14,9 @@
 #include "unikey.h"
 #include "vnconv.h"
 
+// DEBUG
+#include <iostream>
+
 // ibus below version 1.2.99 have problem with PROP_TYPE_NORMAL, use
 // RADIO instead
 #if !IBUS_CHECK_VERSION(1,2,99)
@@ -744,9 +747,11 @@ static gboolean ibus_unikey_engine_process_key_event
     unikey = (IBusUnikeyEngine*) engine;
 
     // DEBUG
-    // cmpitg
-    std::cerr << "--- Before processing" << endl;
-    std::cerr << "[preeditstr]" << unikey->preeditstr () << endl;
+    // cmpitg's
+    // This piece of code is used to monitor pre-edit string for each
+    // key pressed
+    std::cerr << "--- Before processing" << std::endl;
+    std::cerr << "[preeditstr]" << unikey->preeditstr->c_str () << std::endl;
 
     tmp = ibus_unikey_engine_process_key_event_preedit (engine, keyval,
                                                         keycode, modifiers);
@@ -762,9 +767,9 @@ static gboolean ibus_unikey_engine_process_key_event
     } // end check last keyevent with shift
 
     // DEBUG
-    // cmpitg
-    std::cerr << "--- After processing" << endl;
-    std::cerr << "[preeditstr]" << unikey->preeditstr () << endl;
+    // cmpitg's
+    std::cerr << "--- After processing" << std::endl;
+    std::cerr << "[preeditstr]" << unikey->preeditstr->c_str () << std::endl;
 
     return tmp;
 }
