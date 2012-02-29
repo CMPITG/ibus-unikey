@@ -170,7 +170,8 @@ void UnikeySetSingleMode ()
 void UnikeyBackspacePress ()
 {
   UnikeyBufChars = sizeof (UnikeyBuf);
-  MyKbEngine.processBackspace(UnikeyBackspaces, UnikeyBuf, UnikeyBufChars, UnikeyOutput);
+  MyKbEngine.processBackspace
+      (UnikeyBackspaces, UnikeyBuf, UnikeyBufChars, UnikeyOutput);
   //  printf("Backspaces: %d\n",UnikeyBackspaces);
 }
 
