@@ -116,73 +116,74 @@ void UnikeyCheckKbCase(int *pShiftPressed, int *pCapsLockOn)
 }
 
 //--------------------------------------------
-void UnikeySetup()
+void UnikeySetup ()
 {
-    SetupUnikeyEngine();
+    SetupUnikeyEngine ();
     pShMem = new UkSharedMem;
-    pShMem->input.init();
-    pShMem->macStore.init();
+    pShMem->input.init ();
+    pShMem->macStore.init ();
     pShMem->vietKey = 1;
     pShMem->usrKeyMapLoaded = 0;
-    MyKbEngine.setCtrlInfo(pShMem);
-    MyKbEngine.setCheckKbCaseFunc(&UnikeyCheckKbCase);
-    UnikeySetInputMethod(UkTelex);
-    UnikeySetOutputCharset(CONV_CHARSET_XUTF8);
+    MyKbEngine.setCtrlInfo (pShMem);
+    MyKbEngine.setCheckKbCaseFunc (&UnikeyCheckKbCase);
+    UnikeySetInputMethod (UkTelex);
+    UnikeySetOutputCharset (CONV_CHARSET_XUTF8);
     pShMem->initialized = 1;
-    CreateDefaultUnikeyOptions(&pShMem->options);
+    CreateDefaultUnikeyOptions (&pShMem->options);
 }
 
 //--------------------------------------------
-void UnikeyCleanup()
+void UnikeyCleanup ()
 {
   delete pShMem;
 }
 
 //--------------------------------------------
-void UnikeyFilter(unsigned int ch)
+void UnikeyFilter (unsigned int ch)
 {
-  UnikeyBufChars = sizeof(UnikeyBuf);
-  MyKbEngine.process(ch, UnikeyBackspaces, UnikeyBuf, UnikeyBufChars, UnikeyOutput);
+  UnikeyBufChars = sizeof (UnikeyBuf);
+  MyKbEngine.process (ch, UnikeyBackspaces, UnikeyBuf,
+                      UnikeyBufChars, UnikeyOutput);
 }
 
 //--------------------------------------------
-void UnikeyPutChar(unsigned int ch)
+void UnikeyPutChar (unsigned int ch)
 {
-  MyKbEngine.pass(ch);
+  MyKbEngine.pass (ch);
   UnikeyBufChars = 0;
   UnikeyBackspaces = 0;
 }
 
 //--------------------------------------------
-void UnikeyResetBuf()
+void UnikeyResetBuf ()
 {
-  MyKbEngine.reset();
+  MyKbEngine.reset ();
 }
 
 //--------------------------------------------
-void UnikeySetSingleMode()
+void UnikeySetSingleMode ()
 {
-  MyKbEngine.setSingleMode();
+  MyKbEngine.setSingleMode ();
 }
 
 //--------------------------------------------
-void UnikeyBackspacePress()
+void UnikeyBackspacePress ()
 {
-  UnikeyBufChars = sizeof(UnikeyBuf);
+  UnikeyBufChars = sizeof (UnikeyBuf);
   MyKbEngine.processBackspace(UnikeyBackspaces, UnikeyBuf, UnikeyBufChars, UnikeyOutput);
   //  printf("Backspaces: %d\n",UnikeyBackspaces);
 }
 
 //--------------------------------------------
-int UnikeyLoadMacroTable(const char *fileName)
+int UnikeyLoadMacroTable (const char *fileName)
 {
   return pShMem->macStore.loadFromFile(fileName);
 }
 
 //--------------------------------------------
-int UnikeyLoadUserKeyMap(const char *fileName)
+int UnikeyLoadUserKeyMap (const char *fileName)
 {
-  if (UkLoadKeyMap(fileName, pShMem->usrKeyMap)) {
+  if (UkLoadKeyMap (fileName, pShMem->usrKeyMap)) {
     //cout << "User key map loaded!\n"; //DEBUG
     pShMem->usrKeyMapLoaded = 1;
     return 1;
@@ -191,14 +192,14 @@ int UnikeyLoadUserKeyMap(const char *fileName)
 }
 
 //--------------------------------------------
-void UnikeyRestoreKeyStrokes()
+void UnikeyRestoreKeyStrokes ()
 {
-    UnikeyBufChars = sizeof(UnikeyBuf);
-    MyKbEngine.restoreKeyStrokes(UnikeyBackspaces, UnikeyBuf, UnikeyBufChars, UnikeyOutput);
+    UnikeyBufChars = sizeof (UnikeyBuf);
+    MyKbEngine.restoreKeyStrokes (UnikeyBackspaces, UnikeyBuf,
+                                  UnikeyBufChars, UnikeyOutput);
 }
 
-bool UnikeyAtWordBeginning()
+bool UnikeyAtWordBeginning ()
 {
     return MyKbEngine.atWordBeginning();
 }
-
