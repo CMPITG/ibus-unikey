@@ -4,7 +4,6 @@ src/.deps/**
 ukengine/.deps/**
 ukengine/.libs/**
 test_build.sh
-Notes.md
 
 ABOUT-NLS
 INSTALL

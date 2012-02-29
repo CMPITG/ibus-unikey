@@ -103,7 +103,7 @@ static void ibus_unikey_engine_delete_a_char (IBusEngine *engine)
     ibus_engine_delete_surrounding_text (engine, -ibus_text_get_length (text),
                                          ibus_text_get_length (text));
     // DEBUG
-    cerr << "-- DelChar is called --" << endl;
+    // cerr << "-- DelChar is called --" << endl;
 }
 
 GType ibus_unikey_engine_get_type (void)
@@ -305,7 +305,7 @@ static void ibus_unikey_engine_focus_out (IBusEngine* engine)
 static void ibus_unikey_engine_reset (IBusEngine* engine)
 {
     // DEBUG
-    cerr << "-- Reset is called --" << endl;
+    // cerr << "-- Reset is called --" << endl;
     unikey = (IBusUnikeyEngine*) engine;
 
     UnikeyResetBuf ();
@@ -763,11 +763,13 @@ static void ibus_unikey_engine_update_preedit_string2
         ibus_engine_delete_surrounding_text
             (engine, -min (old_length, new_length),
              min (old_length, new_length));
-    cerr << "---" << endl
-         << "Old length: " << old_length << endl
-         << "New length: " << new_length << endl
-         << "Chars to delete: " << min (old_length, new_length)
-         << "---" << endl;
+
+    // DEBUG
+    // cerr << "---" << endl
+    //      << "Old length: " << old_length << endl
+    //      << "New length: " << new_length << endl
+    //      << "Chars to delete: " << min (old_length, new_length)
+    //      << "---" << endl;
 
     ibus_unikey_engine_commit_string (engine, unikey->preeditstr->c_str ());
 }
@@ -909,11 +911,11 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
     else if (keyval == IBUS_BackSpace)
     {
         UnikeyBackspacePress ();
-        cerr << "(Backspace)" << endl; // DEBUG
+        // cerr << "(Backspace)" << endl; // DEBUG
 
         if (UnikeyBackspaces == 0 || unikey->preeditstr->empty ())
         {
-            cerr << "(Backspaces == 0 or empty)" << endl; // DEBUG
+            // cerr << "(Backspaces == 0 or empty)" << endl; // DEBUG
             ibus_unikey_engine_reset (engine);
             return false;
         }

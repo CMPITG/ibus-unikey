@@ -1,17 +1,70 @@
-IBus-Unikey IME
----------------
 Copyright (C) 2009 - 2011 Ubuntu-VN <http://www.ubuntu-vn.org>
 Copyright (C) 2012 - 2012 Dương "Yang" ヤン Nguyễn <cmpitg@gmail.com>
+
 Authors:
     Lê Quốc Tuấn <mr.lequoctuan@gmail.com>
     Dương "Yang" ヤン Nguyễn <cmpitg@gmail.com>
+
 Home: http://ibus-unikey.googlecode.com
-License: GNU GENERAL PUBLIC LICENSE v3
----------------------------------------------
+
+-------
+License
+-------
+
+GNU GENERAL PUBLIC LICENSE v3
+
+-----------
+Description
+-----------
+
 ibus-unikey is an ibus input method engine.
-It use ukengine for progress key event.
-(a modified version of ukengine)
+It uses a modified version of UkEngine for processing key events.
 
-For support: goto http://forum.ubuntu-vn.org/viewforum.php?f=85
+-----
+Notes
+-----
 
-Please read INSTALL before installing the software
+You should use the version provided by your distro's repository.  If
+you distro does not have it, contact the authors to get one.
+
+This version of ibus-unikey does NOT work with applications which does
+not support text surrounding (e.g. some available terminals).  The
+preedit fallback method is being developed to have them supported as
+well.
+
+------------
+How to build
+------------
+
+1. Run autogen in the current directory:
+
+   $ ./autogen
+
+2. Read INSTALL for further bulding information
+
+3. Make:
+
+   $ make
+
+4. Make sure there is no instance of ibus-unikey is running:
+
+   $ pkill ibus-unikey
+
+   or
+
+   $ sudo pkill ibus-unikey
+
+   or
+
+   $ su -c 'pkill ibus-unikey'
+
+5. Run the engine:
+
+   $ src/ibus-engine-unikey --ibus
+
+   Press Ctrl-C if you want to quit.
+
+5'. If you want to run the engine on the clean background, run this
+    instead of step 5:
+
+   $ src/ibus-engine-unikey --ibus >/dev/null 2>&1 & disown
