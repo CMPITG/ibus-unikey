@@ -82,15 +82,28 @@ static IBusUnikeyEngine* unikey; // current (focus) unikey engine
 static gboolean mcap_running;
 
 // cmpitg
-// FIXME
+
+using namespace std;
+
 static gint old_length = 0;
-static std::string old_preeditstr = "";
+static string old_preeditstr = string ("");
+
+string string_diff_end (string newStr, string oldStr)
+{
+    if (oldStr.length () >= newStr.length ())
+        return string ("");
+
+    return newStr.substr (oldStr.length());
+}
+
 static void ibus_unikey_engine_delete_a_char (IBusEngine *engine)
 {
     IBusText *text;
     text = ibus_text_new_from_static_string ((const gchar *) " ");
     ibus_engine_delete_surrounding_text (engine, -ibus_text_get_length (text),
                                          ibus_text_get_length (text));
+    // DEBUG
+    cerr << "-- DelChar is called --" << endl;
 }
 
 GType ibus_unikey_engine_get_type (void)
@@ -167,7 +180,7 @@ static void ibus_unikey_engine_init (IBusUnikeyEngine* unikey)
     guint i;
 
     // DEBUG
-    unikey->preeditstr = new std::string ();
+    unikey->preeditstr = new string ();
 
 //set default options
     unikey->im = Unikey_IM[0];
@@ -247,15 +260,15 @@ static void ibus_unikey_engine_init (IBusUnikeyEngine* unikey)
 }
 
 static GObject* ibus_unikey_engine_constructor (GType type,
-                                               guint n_construct_params,
-                                               GObjectConstructParam* construct_params)
+                                                guint n_construct_params,
+                                                GObjectConstructParam* construct_params)
 {
     IBusUnikeyEngine* unikey;
 
     unikey = (IBusUnikeyEngine*)
         G_OBJECT_CLASS (parent_class)->constructor (type,
-                                                  n_construct_params,
-                                                  construct_params);
+                                                    n_construct_params,
+                                                    construct_params);
 
     return (GObject*)unikey;
 }
@@ -291,17 +304,32 @@ static void ibus_unikey_engine_focus_out (IBusEngine* engine)
 
 static void ibus_unikey_engine_reset (IBusEngine* engine)
 {
+    // DEBUG
+    cerr << "-- Reset is called --" << endl;
     unikey = (IBusUnikeyEngine*) engine;
 
     UnikeyResetBuf ();
+
     if (unikey->preeditstr->length () > 0)
     {
         // DEBUG
-        // std::cerr << "=== _reset ===" << std::endl
-        //           << "Called _hide_preedit_text" << std::endl << std::endl;
-        ibus_engine_hide_preedit_text (engine);
+        // ibus_engine_hide_preedit_text (engine);
         // cmpitg
-        // ibus_unikey_engine_commit_string (engine, unikey->preeditstr->c_str ());
+        // cerr << "String to reset: |" << unikey->preeditstr->c_str ()
+        //      << "|" << endl
+        //      << "|" << old_preeditstr.c_str () << "|" << endl
+        //      << strcmp (old_preeditstr.c_str (),
+        //                 unikey->preeditstr->c_str ()) << endl
+        //      << "@" << string_diff_end (*unikey->preeditstr,
+        //                                 old_preeditstr) << "@" << endl;
+        // ibus_unikey_engine_commit_string
+        //     (engine, last_p_char (unikey->preeditstr->c_str ()));
+        // ibus_unikey_engine_commit_string
+        //     (engine, unikey->preeditstr->c_str ());
+        ibus_unikey_engine_commit_string
+            (engine, string_diff_end (*unikey->preeditstr,
+                                      old_preeditstr).c_str ());
+
         unikey->preeditstr->clear ();
     }
 
@@ -319,14 +347,14 @@ static void ibus_unikey_engine_disable (IBusEngine* engine)
 }
 
 static void ibus_unikey_engine_property_activate (IBusEngine* engine,
-                                                 const gchar* prop_name,
-                                                 guint prop_state)
+                                                  const gchar* prop_name,
+                                                  guint prop_state)
 {
     IBusProperty* prop;
     IBusText* label;
     guint i, j;
 
-    unikey = (IBusUnikeyEngine*)engine;
+    unikey = (IBusUnikeyEngine*) engine;
 
     // input method active
     if (strncmp (prop_name, CONFIG_INPUTMETHOD,
@@ -335,7 +363,7 @@ static void ibus_unikey_engine_property_activate (IBusEngine* engine,
         for (i = 0; i < NUM_INPUTMETHOD; i++)
         {
             if (strcmp (prop_name + strlen (CONFIG_INPUTMETHOD) + 1,
-                       Unikey_IMNames[i]) == 0)
+                        Unikey_IMNames[i]) == 0)
             {
                 unikey->im = Unikey_IM[i];
 
@@ -377,39 +405,42 @@ static void ibus_unikey_engine_property_activate (IBusEngine* engine,
     } // end input method active
 
     // output charset active
-    else if (strncmp (prop_name, CONFIG_OUTPUTCHARSET, strlen (CONFIG_OUTPUTCHARSET)) == 0)
+    else if (strncmp (prop_name,
+                      CONFIG_OUTPUTCHARSET,
+                      strlen (CONFIG_OUTPUTCHARSET)) == 0)
     {
-        for (i=0; i<NUM_OUTPUTCHARSET; i++)
+        for (i = 0; i < NUM_OUTPUTCHARSET; i++)
         {
-            if (strcmp (prop_name+strlen (CONFIG_OUTPUTCHARSET)+1,
-                       Unikey_OCNames[i]) == 0)
+            if (strcmp (prop_name+strlen (CONFIG_OUTPUTCHARSET) + 1,
+                        Unikey_OCNames[i]) == 0)
             {
                 unikey->oc = Unikey_OC[i];
 
                 ibus_unikey_config_set_string (config,
-                                            CONFIG_SECTION, 
-                                            CONFIG_OUTPUTCHARSET,
-                                            Unikey_OCNames[i]);
+                                               CONFIG_SECTION,
+                                               CONFIG_OUTPUTCHARSET,
+                                               Unikey_OCNames[i]);
 
                 // update label
-                for (j=0; j<unikey->prop_list->properties->len; j++)
+                for (j = 0; j < unikey -> prop_list -> properties -> len; j++)
                 {
                     prop = ibus_prop_list_get (unikey->prop_list, j);
                     if (prop==NULL)
                         return;
-                    else if (strcmp (prop->key, CONFIG_OUTPUTCHARSET)==0)
+                    else if (strcmp (prop->key, CONFIG_OUTPUTCHARSET) == 0)
                     {
-                        label = ibus_text_new_from_static_string (Unikey_OCNames[i]);
+                        label =
+                            ibus_text_new_from_static_string (Unikey_OCNames[i]);
                         ibus_property_set_label (prop, label);
                         break;
                     }
                 } // end update label
 
                 // update property state
-                for (j=0; j<unikey->menu_oc->properties->len; j++)
+                for (j = 0; j < unikey->menu_oc->properties->len; j++)
                 {
                     prop = ibus_prop_list_get (unikey->menu_oc, j);
-                    if (prop==NULL)
+                    if (prop == NULL)
                         return;
                     else if (strcmp (prop->key, prop_name) == 0)
                         prop->state = PROP_STATE_CHECKED;
@@ -427,9 +458,9 @@ static void ibus_unikey_engine_property_activate (IBusEngine* engine,
     {
         unikey->ukopt.spellCheckEnabled = !unikey->ukopt.spellCheckEnabled;
         ibus_unikey_config_set_boolean (config,
-                                    CONFIG_SECTION, 
-                                    CONFIG_SPELLCHECK,
-                                    unikey->ukopt.spellCheckEnabled);
+                                        CONFIG_SECTION, 
+                                        CONFIG_SPELLCHECK,
+                                        unikey->ukopt.spellCheckEnabled);
 
         // update state
         for (j = 0; j < unikey->menu_opt->properties->len ; j++)
@@ -452,9 +483,9 @@ static void ibus_unikey_engine_property_activate (IBusEngine* engine,
     {
         unikey->ukopt.macroEnabled = !unikey->ukopt.macroEnabled;
         ibus_unikey_config_set_boolean (config,
-                                    CONFIG_SECTION, 
-                                    CONFIG_MACROENABLED,
-                                    unikey->ukopt.macroEnabled);
+                                        CONFIG_SECTION, 
+                                        CONFIG_MACROENABLED,
+                                        unikey->ukopt.macroEnabled);
 
         // update state
         for (j = 0; j < unikey->menu_opt->properties->len ; j++)
@@ -478,9 +509,9 @@ static void ibus_unikey_engine_property_activate (IBusEngine* engine,
         unikey->mouse_capture = !unikey->mouse_capture;
 
         ibus_unikey_config_set_boolean (config,
-                                    CONFIG_SECTION, 
-                                    CONFIG_MOUSECAPTURE,
-                                    unikey->mouse_capture);
+                                        CONFIG_SECTION, 
+                                        CONFIG_MOUSECAPTURE,
+                                        unikey->mouse_capture);
 
         // update state
         for (j = 0; j < unikey->menu_opt->properties->len ; j++)
@@ -533,14 +564,14 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey)
         tooltip = ibus_text_new_from_static_string (""); // ?
         sprintf (name, CONFIG_INPUTMETHOD"_%s", Unikey_IMNames[i]);
         prop = ibus_property_new (name,
-                                 PROP_TYPE_RADIO,
-                                 label,
-                                 "",
-                                 tooltip,
-                                 TRUE,
-                                 TRUE,
-                                 Unikey_IM[i]==unikey->im?PROP_STATE_CHECKED:PROP_STATE_UNCHECKED,
-                                 NULL);
+                                  PROP_TYPE_RADIO,
+                                  label,
+                                  "",
+                                  tooltip,
+                                  TRUE,
+                                  TRUE,
+                                  Unikey_IM[i]==unikey->im?PROP_STATE_CHECKED:PROP_STATE_UNCHECKED,
+                                  NULL);
 
         ibus_prop_list_append (unikey->menu_im, prop);
     }
@@ -554,14 +585,14 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey)
         tooltip = ibus_text_new_from_static_string (""); // ?
         sprintf (name, CONFIG_OUTPUTCHARSET"_%s", Unikey_OCNames[i]);
         prop = ibus_property_new (name,
-                                 PROP_TYPE_RADIO,
-                                 label,
-                                 "",
-                                 tooltip,
-                                 TRUE,
-                                 TRUE,
-                                 Unikey_OC[i]==unikey->oc?PROP_STATE_CHECKED:PROP_STATE_UNCHECKED,
-                                 NULL);
+                                  PROP_TYPE_RADIO,
+                                  label,
+                                  "",
+                                  tooltip,
+                                  TRUE,
+                                  TRUE,
+                                  Unikey_OC[i]==unikey->oc?PROP_STATE_CHECKED:PROP_STATE_UNCHECKED,
+                                  NULL);
 
         ibus_prop_list_append (unikey->menu_oc, prop);
     }
@@ -574,15 +605,15 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey)
     label = ibus_text_new_from_static_string (_("Enable spell check"));
     tooltip = ibus_text_new_from_static_string (_("If enable, you can decrease mistake when typing"));
     prop = ibus_property_new (CONFIG_SPELLCHECK,
-                             PROP_TYPE_TOGGLE,
-                             label,
-                             "",
-                             tooltip,
-                             TRUE,
-                             TRUE,
-                             (unikey->ukopt.spellCheckEnabled==1)?
-                             PROP_STATE_CHECKED:PROP_STATE_UNCHECKED,
-                             NULL);
+                              PROP_TYPE_TOGGLE,
+                              label,
+                              "",
+                              tooltip,
+                              TRUE,
+                              TRUE,
+                              (unikey->ukopt.spellCheckEnabled==1)?
+                              PROP_STATE_CHECKED:PROP_STATE_UNCHECKED,
+                              NULL);
 
     ibus_prop_list_append (unikey->menu_opt, prop);
 
@@ -590,15 +621,15 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey)
     label = ibus_text_new_from_static_string (_("Enable Macro"));
     tooltip = ibus_text_new_from_static_string ("");
     prop = ibus_property_new (CONFIG_MACROENABLED,
-                             PROP_TYPE_TOGGLE,
-                             label,
-                             "",
-                             tooltip,
-                             TRUE,
-                             TRUE,
-                             (unikey->ukopt.macroEnabled==1)?
-                             PROP_STATE_CHECKED:PROP_STATE_UNCHECKED,
-                             NULL);
+                              PROP_TYPE_TOGGLE,
+                              label,
+                              "",
+                              tooltip,
+                              TRUE,
+                              TRUE,
+                              (unikey->ukopt.macroEnabled==1)?
+                              PROP_STATE_CHECKED:PROP_STATE_UNCHECKED,
+                              NULL);
 
     ibus_prop_list_append (unikey->menu_opt, prop);
 
@@ -712,7 +743,7 @@ static void ibus_unikey_engine_commit_string
 // FIXME
 // Instead of update the preedit_string, the preeditstr is committed but without rasing
 static gint min (gint a, gint b) { return a < b ? a : b; }
-static gint get_length (std::string *s)
+static gint get_length (string *s)
 {
     IBusText *text;
     text = ibus_text_new_from_static_string (s->c_str ());
@@ -732,10 +763,11 @@ static void ibus_unikey_engine_update_preedit_string2
         ibus_engine_delete_surrounding_text
             (engine, -min (old_length, new_length),
              min (old_length, new_length));
-    std::cerr << "---" << std::endl
-              << "Old length: " << old_length << std::endl
-              << "New length: " << new_length << std::endl
-              << "---" << std::endl;
+    cerr << "---" << endl
+         << "Old length: " << old_length << endl
+         << "New length: " << new_length << endl
+         << "Chars to delete: " << min (old_length, new_length)
+         << "---" << endl;
 
     ibus_unikey_engine_commit_string (engine, unikey->preeditstr->c_str ());
 }
@@ -789,9 +821,9 @@ static void ibus_unikey_engine_erase_chars (IBusEngine *engine, int num_chars)
 
     unikey->preeditstr->erase (i + 1);
     gint newLength = get_length (unikey->preeditstr);
-    // FIXME
+    // DEBUG
     // Delete in the buffer as well
-    std::cerr << "erase_ " << newLength << " " << oldLength << std::endl;
+    // cerr << "erase_ " << newLength << " " << oldLength << endl;
     for (k = 0; k < oldLength - newLength; k++)
     {
         ibus_unikey_engine_delete_a_char (engine);
@@ -808,17 +840,17 @@ static gboolean ibus_unikey_engine_process_key_event
     unikey = (IBusUnikeyEngine*) engine;
 
     // DEBUG
-    // cmpitg's
     // This piece of code is used to monitor pre-edit string for each
     // key pressed
-    std::cerr << "=== Processing key ===" << std::endl
-              << "[before]" << unikey->preeditstr->c_str () << std::endl;
-
-    tmp = ibus_unikey_engine_process_key_event_preedit (engine, keyval,
-                                                        keycode, modifiers);
+    // cerr << "=== Processing key ===" << endl
+    //           << "[before] " << unikey->preeditstr->length ()
+    //           << " |" << unikey->preeditstr->c_str () << "|"
+    //           << endl;
+    tmp = ibus_unikey_engine_process_key_event_preedit
+        (engine, keyval, keycode, modifiers);
 
     // check last keyevent with shift
-    if (keyval >= IBUS_space && keyval <=IBUS_asciitilde)
+    if (keyval >= IBUS_space && keyval <= IBUS_asciitilde)
     {
         unikey->last_key_with_shift = modifiers & IBUS_SHIFT_MASK;
     }
@@ -828,9 +860,9 @@ static gboolean ibus_unikey_engine_process_key_event
     } // end check last keyevent with shift
 
     // DEBUG
-    // cmpitg's
-    std::cerr << "[after]" << unikey->preeditstr->c_str ()
-              << std::endl << std::endl;
+    // cerr << "[after] " << unikey->preeditstr->length ()
+    //           << " |" << unikey->preeditstr->c_str () << "|"
+    //           << endl << endl;
 
     return tmp;
 }
@@ -840,7 +872,7 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
 {
     // FIXME
     old_length = get_length (unikey->preeditstr);
-    old_preeditstr = std::string (*(unikey->preeditstr));
+    old_preeditstr = string (*(unikey->preeditstr));
 
     if (modifiers & IBUS_RELEASE_MASK)
         return false;
@@ -857,9 +889,10 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
              || (keyval >= IBUS_Home && keyval <= IBUS_Insert)
              || (keyval >= IBUS_KP_Home && keyval <= IBUS_KP_Delete))
     {
+        // The new character is added to the preeditstr, so just
+        // output the whole thing
         ibus_unikey_engine_reset (engine);
         return false;
-
     }
 
     // when a Shift is pressed
@@ -876,13 +909,11 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
     else if (keyval == IBUS_BackSpace)
     {
         UnikeyBackspacePress ();
-        // cmpitg
-        // ibus_unikey_engine_delete_a_char (engine);
-        std::cerr << "(Backspace)" << std::endl; // DEBUG
+        cerr << "(Backspace)" << endl; // DEBUG
 
         if (UnikeyBackspaces == 0 || unikey->preeditstr->empty ())
         {
-            std::cerr << "(Backspaces == 0 or empty)" << std::endl; // DEBUG
+            cerr << "(Backspaces == 0 or empty)" << endl; // DEBUG
             ibus_unikey_engine_reset (engine);
             return false;
         }
@@ -890,11 +921,9 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
         {
             if (unikey->preeditstr->length () <= (guint) UnikeyBackspaces)
             {
-                // DEBUG !!!
-                // for (guint times = 0;
-                //      times < get_length (unikey->preeditstr); times++)
-                //     ibus_unikey_engine_delete_a_char (engine);
-                std::cerr << "(unikey->preeditstr->length () <= (guint) UnikeyBackspaces)" << std::endl; // DEBUG
+                cerr <<
+                    "(unikey->preeditstr->length () <= (guint) UnikeyBackspaces)"
+                     << endl;
                 ibus_unikey_engine_delete_a_char (engine);
 
                 unikey->preeditstr->clear ();
@@ -905,7 +934,7 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
             {
                 // DEBUG
                 // ibus_unikey_engine_delete_a_char (engine);
-                std::cerr << "(Last backspace)" << std::endl; // DEBUG
+                // cerr << "(Last backspace)" << endl; // DEBUG
                 ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
                 ibus_unikey_engine_update_preedit_string2
                     (engine, unikey->preeditstr->c_str (), true);
@@ -998,17 +1027,15 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
 
         // shift + space, shift + shift event
         if ((unikey->last_key_with_shift == false && modifiers & IBUS_SHIFT_MASK
-                    && keyval == IBUS_space && !UnikeyAtWordBeginning ())
+             && keyval == IBUS_space && !UnikeyAtWordBeginning ())
             || (keyval == IBUS_Shift_L || keyval == IBUS_Shift_R) // (&& modifiers & IBUS_SHIFT_MASK), sure this have IBUS_SHIFT_MASK
-           )
+            )
         {
-            // std::cerr << "[case] 9" << std::endl;
             UnikeyRestoreKeyStrokes ();
         } // end shift + space, shift + shift event
 
         else
         {
-            // std::cerr << "[case] 10" << std::endl;
             UnikeyFilter (keyval);
         }
         // end process keyval
@@ -1039,7 +1066,8 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
                 int bufSize = CONVERT_BUF_SIZE;
 
                 latinToUtf (buf, UnikeyBuf, UnikeyBufChars, &bufSize);
-                unikey->preeditstr->append ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
+                unikey->preeditstr->append
+                    ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
             }
         }
         else if (keyval != IBUS_Shift_L && keyval != IBUS_Shift_R) // if ukengine not process
@@ -1093,9 +1121,14 @@ static void* thread_mouse_capture (void* data)
     while (mcap_running)
     {
         pthread_mutex_lock (&mutex_mcap);
-        XGrabPointer (dpy, w, 0, ButtonPressMask | PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+        XGrabPointer
+            (dpy, w, 0, ButtonPressMask | PointerMotionMask,
+             GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
         XPeekEvent (dpy, &event);
-        pthread_mutex_trylock (&mutex_mcap); // set mutex to lock status, so process will wait until next unlock
+
+        // set mutex to lock status, so process will wait until next unlock
+        pthread_mutex_trylock (&mutex_mcap);
+
         XUngrabPointer (dpy, CurrentTime);
         XSync (dpy, TRUE);
         ibus_unikey_engine_reset ((IBusEngine*)unikey);
