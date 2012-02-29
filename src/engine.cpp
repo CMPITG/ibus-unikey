@@ -283,7 +283,11 @@ static void ibus_unikey_engine_reset (IBusEngine* engine)
     UnikeyResetBuf ();
     if (unikey->preeditstr->length () > 0)
     {
+        // DEBUG
+        std::cerr << "=== _reset ===" << std::endl
+                  << "Called _hide_preedit_text" << std::endl << std::endl;
         ibus_engine_hide_preedit_text (engine);
+
         ibus_unikey_engine_commit_string (engine, unikey->preeditstr->c_str ());
         unikey->preeditstr->clear ();
     }
@@ -691,6 +695,31 @@ static void ibus_unikey_engine_commit_string
 
 // cmpitg
 // FIXME
+// Instead of update the preedit_string, the preeditstr is committed but without rasing
+static void ibus_unikey_engine_update_preedit_string2
+(IBusEngine *engine, const gchar *string, gboolean visible)
+{
+    IBusText *text;
+
+    unikey = (IBusUnikeyEngine*) engine;
+
+    text = ibus_text_new_from_static_string (string);
+
+    // underline text
+    ibus_text_append_attribute (text, IBUS_ATTR_TYPE_UNDERLINE,
+                                IBUS_ATTR_UNDERLINE_SINGLE, 0, -1);
+
+    // update and display text
+    ibus_engine_update_preedit_text (engine, text,
+                                     ibus_text_get_length (text), visible);
+
+    if (unikey->mouse_capture)
+    {
+        // unlock capture thread (start capture)
+        pthread_mutex_unlock (&mutex_mcap);
+    }
+}
+
 static void ibus_unikey_engine_update_preedit_string
 (IBusEngine *engine, const gchar *string, gboolean visible)
 {
@@ -825,6 +854,10 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
         {
             if (unikey->preeditstr->length () <= (guint) UnikeyBackspaces)
             {
+                // DEBUG
+                std::cerr << "<< _pressed_ >>" << std::endl
+                  << "Called _hide_preedit_text" << std::endl << std::endl;
+
                 unikey->preeditstr->clear ();
                 ibus_engine_hide_preedit_text (engine);
                 unikey->auto_commit = true;
