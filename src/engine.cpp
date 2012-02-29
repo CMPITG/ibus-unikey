@@ -153,6 +153,7 @@ static void ibus_unikey_engine_init (IBusUnikeyEngine* unikey)
     gboolean b;
     guint i;
 
+    // DEBUG
     unikey->preeditstr = new std::string ();
 
 //set default options
@@ -248,6 +249,7 @@ static GObject* ibus_unikey_engine_constructor (GType type,
 
 static void ibus_unikey_engine_destroy (IBusUnikeyEngine* unikey)
 {
+    // DEBUG
     delete unikey->preeditstr;
     g_object_unref (unikey->prop_list);
 
@@ -722,10 +724,15 @@ static void ibus_unikey_engine_erase_chars (IBusEngine *engine, int num_chars)
     int i, k;
     guchar c;
 
-    unikey = (IBusUnikeyEngine*)engine;
+    unikey = (IBusUnikeyEngine*) engine;
     k = num_chars;
 
-    for ( i = unikey->preeditstr->length ()-1; i >= 0 && k > 0; i--)
+    // DEBUG
+    std::cerr << "=== erase_chars ===" << std::endl
+              << "[before] " << unikey->preeditstr->c_str ()
+              << std::endl;
+
+    for (i = unikey->preeditstr->length () - 1; i >= 0 && k > 0; i--)
     {
         c = unikey->preeditstr->at (i);
 
@@ -737,6 +744,9 @@ static void ibus_unikey_engine_erase_chars (IBusEngine *engine, int num_chars)
     }
 
     unikey->preeditstr->erase (i+1);
+    // DEBUG
+    std::cerr << "[after] " << unikey->preeditstr->c_str ()
+              << std::endl << std::endl;
 }
 
 static gboolean ibus_unikey_engine_process_key_event
@@ -750,8 +760,8 @@ static gboolean ibus_unikey_engine_process_key_event
     // cmpitg's
     // This piece of code is used to monitor pre-edit string for each
     // key pressed
-    std::cerr << "--- Before processing" << std::endl;
-    std::cerr << "[preeditstr]" << unikey->preeditstr->c_str () << std::endl;
+    std::cerr << "=== Processing key ===" << std::endl
+              << "[before]" << unikey->preeditstr->c_str () << std::endl;
 
     tmp = ibus_unikey_engine_process_key_event_preedit (engine, keyval,
                                                         keycode, modifiers);
@@ -768,8 +778,8 @@ static gboolean ibus_unikey_engine_process_key_event
 
     // DEBUG
     // cmpitg's
-    std::cerr << "--- After processing" << std::endl;
-    std::cerr << "[preeditstr]" << unikey->preeditstr->c_str () << std::endl;
+    std::cerr << "[after]" << unikey->preeditstr->c_str ()
+              << std::endl << std::endl;
 
     return tmp;
 }
@@ -816,7 +826,7 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
         }
         else
         {
-            if (unikey->preeditstr->length () <= (guint)UnikeyBackspaces)
+            if (unikey->preeditstr->length () <= (guint) UnikeyBackspaces)
             {
                 unikey->preeditstr->clear ();
                 ibus_engine_hide_preedit_text (engine);
@@ -825,7 +835,8 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
             else
             {
                 ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
-                ibus_unikey_engine_update_preedit_string (engine, unikey->preeditstr->c_str (), true);
+                ibus_unikey_engine_update_preedit_string
+                    (engine, unikey->preeditstr->c_str (), true);
             }
 
             // change tone position after press backspace
@@ -833,7 +844,8 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
             {
                 if (unikey->oc == CONV_CHARSET_XUTF8)
                 {
-                    unikey->preeditstr->append ((const gchar*)UnikeyBuf, UnikeyBufChars);
+                    unikey->preeditstr->append
+                        ((const gchar*) UnikeyBuf, UnikeyBufChars);
                 }
                 else
                 {
@@ -841,11 +853,13 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
                     int bufSize = CONVERT_BUF_SIZE;
 
                     latinToUtf (buf, UnikeyBuf, UnikeyBufChars, &bufSize);
-                    unikey->preeditstr->append ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
+                    unikey->preeditstr->append
+                        ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
                 }
 
                 unikey->auto_commit = false;
-                ibus_unikey_engine_update_preedit_string (engine, unikey->preeditstr->c_str (), true);
+                ibus_unikey_engine_update_preedit_string
+                    (engine, unikey->preeditstr->c_str (), true);
             }
         }
         return true;
@@ -975,9 +989,11 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
         }
         // end commit string
 
-        ibus_unikey_engine_update_preedit_string (engine, unikey->preeditstr->c_str (), true);
+        ibus_unikey_engine_update_preedit_string (engine,
+                                                  unikey->preeditstr->c_str (),
+                                                  true);
         return true;
-    } //end capture printable char
+    } // end capture printable char
 
     // non process key
     ibus_unikey_engine_reset (engine);
