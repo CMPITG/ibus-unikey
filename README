@@ -38,7 +38,7 @@ How to build
 
 1. Run autogen in the current directory:
 
-   $ ./autogen
+   $ ./autogen.sh
 
 2. Read INSTALL for further bulding information
 
