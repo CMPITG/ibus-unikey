@@ -48,15 +48,22 @@ How to build
 
 4. Make sure there is no instance of ibus-unikey is running:
 
-   $ pkill ibus-unikey
+   $ grep aux | grep ibus-engine-unikey
 
-   or
+   Pay attention to the PID of the `ibus-engine-unikey' process and
+   kill it with:
 
-   $ sudo pkill ibus-unikey
+   $ kill ibus_engine_unikey_pid
 
-   or
+   if this does not work, it's probably due to lack of permission, try:
 
-   $ su -c 'pkill ibus-unikey'
+   $ sudo kill ibus_engine_unikey_pid
+
+   or this:
+
+   $ su -c 'kill ibus_engine_unikey_pid'
+
+   if your system only supports `su'.
 
 5. Run the engine:
 

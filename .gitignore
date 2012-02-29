@@ -119,3 +119,4 @@ ukengine/unikey.lo
 ukengine/unikey.o
 ukengine/usrkeymap.lo
 ukengine/usrkeymap.o
+po/Makefile.in.in~
