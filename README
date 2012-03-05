@@ -48,7 +48,7 @@ How to build
 
 4. Make sure there is no instance of ibus-unikey is running:
 
-   $ grep aux | grep ibus-engine-unikey
+   $ ps aux | grep ibus-engine-unikey
 
    Pay attention to the PID of the `ibus-engine-unikey' process and
    kill it with:
