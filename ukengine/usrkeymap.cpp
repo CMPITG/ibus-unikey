@@ -35,8 +35,7 @@ void initKeyMap(int keyMap[256]);
 
 #define OPT_COMMENT_CHAR ';'
 
-struct UkEventLabelPair
-{
+struct UkEventLabelPair {
     char label[32];
     int ev;
 };
@@ -50,7 +49,7 @@ UkEventLabelPair UkEvLabelList[] = {
     {"Tone5", vneTone5},
     {"Roof-All", vneRoofAll},
     {"Roof-A", vneRoof_a},
-    {"Roof-E", vneRoof_e}, 
+    {"Roof-E", vneRoof_e},
     {"Roof-O", vneRoof_o},
     {"Hook-Bowl", vneHookAll},
     {"Hook-UO", vneHook_uo},
@@ -79,8 +78,7 @@ UkEventLabelPair UkEvLabelList[] = {
 const int UkEvLabelCount = sizeof(UkEvLabelList)/sizeof(UkEventLabelPair);
 
 //--------------------------------------------------
-static int parseNameValue(char *line, char **name, char **value)
-{
+static int parseNameValue(char *line, char **name, char **value) {
     char *p, *mark;
     char ch;
 
@@ -128,8 +126,7 @@ static int parseNameValue(char *line, char **name, char **value)
 }
 
 //-----------------------------------------------------
-DllExport int UkLoadKeyMap(const char *fileName, int keyMap[256])
-{
+DllExport int UkLoadKeyMap(const char *fileName, int keyMap[256]) {
     int i, mapCount;
     UkKeyMapPair orderMap[256];
     if (!UkLoadKeyOrderMap(fileName, orderMap, &mapCount))
@@ -146,8 +143,7 @@ DllExport int UkLoadKeyMap(const char *fileName, int keyMap[256])
 }
 
 //------------------------------------------------------------------
-DllExport int UkLoadKeyOrderMap(const char *fileName, UkKeyMapPair *pMap, int *pMapCount)
-{
+DllExport int UkLoadKeyOrderMap(const char *fileName, UkKeyMapPair *pMap, int *pMapCount) {
     FILE *f;
     char *buf;
     char *name, *value;
@@ -194,8 +190,7 @@ DllExport int UkLoadKeyOrderMap(const char *fileName, UkKeyMapPair *pMap, int *p
                         if (keyMap[c] < vneCount) {
                             pMap[mapCount].key = toupper(c);
                             keyMap[toupper(c)] = UkEvLabelList[i].ev;
-                        }
-                        else {
+                        } else {
                             pMap[mapCount].key = c;
                         }
                         mapCount++;
@@ -205,10 +200,9 @@ DllExport int UkLoadKeyOrderMap(const char *fileName, UkKeyMapPair *pMap, int *p
                 if (i == UkEvLabelCount) {
                     cerr << "Error in user key layout, line " << lineCount << ": command not found" << endl;
                 }
-            }
-            else {
-                cerr << "Error in user key layout, line " << lineCount 
-                     << ": key name is not a single character" << endl;	
+            } else {
+                cerr << "Error in user key layout, line " << lineCount
+                     << ": key name is not a single character" << endl;
             }
         }
     }
@@ -221,18 +215,16 @@ DllExport int UkLoadKeyOrderMap(const char *fileName, UkKeyMapPair *pMap, int *p
 }
 
 //-------------------------------------------
-void initKeyMap(int keyMap[256])
-{
+void initKeyMap(int keyMap[256]) {
     unsigned int c;
     for (c=0; c<256; c++)
         keyMap[c] = vneNormal;
 }
 
-const char *UkKeyMapHeader = 
+const char *UkKeyMapHeader =
     "; This is UniKey user-defined key mapping file, generated from UniKey (Windows)\n\n";
 
-DllExport int UkStoreKeyOrderMap(const char *fileName, UkKeyMapPair *pMap, int mapCount)
-{
+DllExport int UkStoreKeyOrderMap(const char *fileName, UkKeyMapPair *pMap, int mapCount) {
     FILE *f;
     int i;
     int labelIndex;
@@ -256,8 +248,7 @@ DllExport int UkStoreKeyOrderMap(const char *fileName, UkKeyMapPair *pMap, int m
     return 1;
 }
 
-int getLabelIndex(int event)
-{
+int getLabelIndex(int event) {
     int i;
     for (i = 0; i < UkEvLabelCount; i++) {
         if (UkEvLabelList[i].ev == event)

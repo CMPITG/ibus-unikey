@@ -1,4 +1,5 @@
 // -*- mode:c++; tab-width:4; c-basic-offset:4; indent-tabs-mode:nil -*-
+
 /* Unikey Vietnamese Input Method
  * Copyright (C) 2000-2005 Pham Kim Long
  * Contact:
@@ -6,19 +7,19 @@
  *   UniKey project: http://unikey.org
  *
  * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+ * 02111-1307, USA.
  */
 
 #ifndef __UKENGINE_H
@@ -55,29 +56,29 @@ struct KeyBufEntry {
     bool converted;
 };
 
-class UkEngine
-{
+class UkEngine {
 public:
     UkEngine();
-    void setCtrlInfo(UkSharedMem *p)
-    {
+    void setCtrlInfo(UkSharedMem *p) {
         m_pCtrl = p;
     }
 
-    void setCheckKbCaseFunc(CheckKeyboardCaseCb pFunc) 
-    {
+    void setCheckKbCaseFunc(CheckKeyboardCaseCb pFunc) {
         m_keyCheckFunc = pFunc;
     }
 
     bool atWordBeginning();
 
-    int process(unsigned int keyCode, int & backs, unsigned char *outBuf, int & outSize, UkOutputType & outType);
-    void pass(int keyCode); //just pass through without filtering
-    void setSingleMode();
+    int process (unsigned int keyCode, int & backs,
+                 unsigned char *outBuf, int & outSize, UkOutputType & outType);
+    void pass (int keyCode); //just pass through without filtering
+    void setSingleMode ();
 
-    int processBackspace(int & backs, unsigned char *outBuf, int & outSize, UkOutputType & outType);
+    int processBackspace (int & backs, unsigned char *outBuf,
+                          int & outSize, UkOutputType & outType);
     void reset();
-    int restoreKeyStrokes(int & backs, unsigned char *outBuf, int & outSize, UkOutputType & outType);
+    int restoreKeyStrokes (int & backs, unsigned char *outBuf,
+                           int & outSize, UkOutputType & outType);
 
     //following methods must be public just to enable the use of pointers to them
     //they should not be called from outside.
@@ -117,7 +118,7 @@ protected:
     bool m_keyRestored;
     bool m_keyRestoring;
     UkOutputType m_outType;
-  
+
     struct WordInfo {
         //info for word ending at this position
         VnWordForm form;

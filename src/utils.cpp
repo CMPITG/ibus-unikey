@@ -21,8 +21,7 @@ and STelex2 (which same as STelex, the difference is it use w as ư).\n\
   - Use <Control> to commit a word.\
 ")
 
-IBusComponent* ibus_unikey_get_component()
-{
+IBusComponent* ibus_unikey_get_component() {
     IBusComponent* component;
     IBusEngineDesc* engine;
 
@@ -34,7 +33,7 @@ IBusComponent* ibus_unikey_get_component()
                                    PACKAGE_BUGREPORT,
                                    "",
                                    PACKAGE_NAME);
-    
+
 #if IBUS_CHECK_VERSION(1,3,99)
     engine = ibus_engine_desc_new_varargs ("name",        "Unikey",
                                            "longname",    "Unikey",
@@ -64,28 +63,22 @@ IBusComponent* ibus_unikey_get_component()
 }
 
 // code from x-unikey, for convert charset that not is XUtf-8
-int latinToUtf(unsigned char* dst, unsigned char* src, int inSize, int* pOutSize)
-{
+int latinToUtf(unsigned char* dst, unsigned char* src, int inSize, int* pOutSize) {
     int i;
     int outLeft;
     unsigned char ch;
 
     outLeft = *pOutSize;
 
-    for (i=0; i<inSize; i++)
-    {
+    for (i=0; i<inSize; i++) {
         ch = *src++;
-        if (ch < 0x80)
-        {
+        if (ch < 0x80) {
             outLeft -= 1;
             if (outLeft >= 0)
                 *dst++ = ch;
-        }
-        else
-        {
+        } else {
             outLeft -= 2;
-            if (outLeft >= 0)
-            {
+            if (outLeft >= 0) {
                 *dst++ = (0xC0 | ch >> 6);
                 *dst++ = (0x80 | (ch & 0x3F));
             }
@@ -97,15 +90,13 @@ int latinToUtf(unsigned char* dst, unsigned char* src, int inSize, int* pOutSize
 }
 
 gboolean ibus_unikey_config_get_string(IBusConfig* config,
-                                    const gchar* section,
-                                    const gchar* name,
-                                    gchar** result)
-{
+                                       const gchar* section,
+                                       const gchar* name,
+                                       gchar** result) {
 #if IBUS_CHECK_VERSION(1,3,99)
     GVariant *value = NULL;
     value = ibus_config_get_value(config, section, name);
-    if (value)
-    {
+    if (value) {
         *result = g_strdup((gchar*)g_variant_get_string(value, NULL));
         g_variant_unref(value);
         return true;
@@ -113,8 +104,7 @@ gboolean ibus_unikey_config_get_string(IBusConfig* config,
     return false;
 #else
     GValue value = {0};
-    if (ibus_config_get_value(config, section, name, &value))
-    {
+    if (ibus_config_get_value(config, section, name, &value)) {
         *result = g_strdup((gchar*)g_value_get_string(&value));
         g_value_unset(&value);
         return true;
@@ -124,10 +114,9 @@ gboolean ibus_unikey_config_get_string(IBusConfig* config,
 }
 
 void ibus_unikey_config_set_string(IBusConfig* config,
-                                    const gchar* section,
-                                    const gchar* name,
-                                    const gchar* value)
-{
+                                   const gchar* section,
+                                   const gchar* name,
+                                   const gchar* value) {
 #if IBUS_CHECK_VERSION(1,3,99)
     ibus_config_set_value(config, section, name, g_variant_new_string(value));
 #else
@@ -141,13 +130,11 @@ void ibus_unikey_config_set_string(IBusConfig* config,
 gboolean ibus_unikey_config_get_boolean(IBusConfig* config,
                                         const gchar* section,
                                         const gchar* name,
-                                        gboolean* result)
-{
+                                        gboolean* result) {
 #if IBUS_CHECK_VERSION(1,3,99)
     GVariant *value = NULL;
     value = ibus_config_get_value(config, section, name);
-    if (value)
-    {
+    if (value) {
         *result = g_variant_get_boolean(value);
         g_variant_unref(value);
         return true;
@@ -155,8 +142,7 @@ gboolean ibus_unikey_config_get_boolean(IBusConfig* config,
     return false;
 #else
     GValue value = {0};
-    if (ibus_config_get_value(config, section, name, &value))
-    {
+    if (ibus_config_get_value(config, section, name, &value)) {
         *result = g_value_get_boolean(&value);
         g_value_unset(&value);
         return true;
@@ -168,8 +154,7 @@ gboolean ibus_unikey_config_get_boolean(IBusConfig* config,
 void ibus_unikey_config_set_boolean(IBusConfig* config,
                                     const gchar* section,
                                     const gchar* name,
-                                    gboolean value)
-{
+                                    gboolean value) {
 #if IBUS_CHECK_VERSION(1,3,99)
     ibus_config_set_value(config, section, name, g_variant_new_boolean(value));
 #else

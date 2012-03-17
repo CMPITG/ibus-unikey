@@ -68,49 +68,49 @@ extern "C" {
     extern int UnikeyBufChars;
     extern UkOutputType UnikeyOutput;
 
-  void UnikeySetup(); // always call this first
-  void UnikeyCleanup(); // call this when unloading unikey module
-  
-  // call this to reset Unikey's state when focus, context is changed or
-  // some control key is pressed
-  void UnikeyResetBuf(); 
+    void UnikeySetup(); // always call this first
+    void UnikeyCleanup(); // call this when unloading unikey module
 
- // main handler, call every time a character input is received
-  void UnikeyFilter(unsigned int ch);
-  void UnikeyPutChar(unsigned int ch); // put new char without filtering
+    // call this to reset Unikey's state when focus, context is changed or
+    // some control key is pressed
+    void UnikeyResetBuf();
 
-  // call this before UnikeyFilter for correctly processing some TELEX shortcuts
-  void UnikeySetCapsState(int shiftPressed, int CapsLockOn);
+// main handler, call every time a character input is received
+    void UnikeyFilter(unsigned int ch);
+    void UnikeyPutChar(unsigned int ch); // put new char without filtering
 
- // call this when backspace is pressed
-  void UnikeyBackspacePress();
+    // call this before UnikeyFilter for correctly processing some TELEX shortcuts
+    void UnikeySetCapsState(int shiftPressed, int CapsLockOn);
 
-  // call this to restore to original key strokes
-  void UnikeyRestoreKeyStrokes();
+// call this when backspace is pressed
+    void UnikeyBackspacePress();
 
- //set extra options
-  void UnikeySetOptions(UnikeyOptions *pOpt); 
-  void CreateDefaultUnikeyOptions(UnikeyOptions *pOpt);
+    // call this to restore to original key strokes
+    void UnikeyRestoreKeyStrokes();
 
-  void UnikeyGetOptions(UnikeyOptions *pOpt);
+//set extra options
+    void UnikeySetOptions(UnikeyOptions *pOpt);
+    void CreateDefaultUnikeyOptions(UnikeyOptions *pOpt);
 
-  // set input method
-  //   im: TELEX_INPUT, VNI_INPUT, VIQR_INPUT, VIQR_STAR_INPUT
-  void UnikeySetInputMethod(UkInputMethod im);
-  // set output format
-  //  void UnikeySetOutputVIQR();
-  // void UnikeySetOutputUTF8();
-  int UnikeySetOutputCharset(int charset);
+    void UnikeyGetOptions(UnikeyOptions *pOpt);
 
-  int UnikeyLoadMacroTable(const char *fileName);
-  int UnikeyLoadUserKeyMap(const char *fileName);
+    // set input method
+    //   im: TELEX_INPUT, VNI_INPUT, VIQR_INPUT, VIQR_STAR_INPUT
+    void UnikeySetInputMethod(UkInputMethod im);
+    // set output format
+    //  void UnikeySetOutputVIQR();
+    // void UnikeySetOutputUTF8();
+    int UnikeySetOutputCharset(int charset);
 
-  //call this to enable typing vietnamese even in a non-vn sequence
-  //e.g: GD&DDT,QDDND...
-  //The engine will return to normal mode when a word-break occurs.
-  void UnikeySetSingleMode();
+    int UnikeyLoadMacroTable(const char *fileName);
+    int UnikeyLoadUserKeyMap(const char *fileName);
 
-  bool UnikeyAtWordBeginning();
+    //call this to enable typing vietnamese even in a non-vn sequence
+    //e.g: GD&DDT,QDDND...
+    //The engine will return to normal mode when a word-break occurs.
+    void UnikeySetSingleMode();
+
+    bool UnikeyAtWordBeginning();
 #if defined(__cplusplus)
 }
 #endif

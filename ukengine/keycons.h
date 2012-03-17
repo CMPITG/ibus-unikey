@@ -37,17 +37,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef enum {UkTelex, UkVni, UkViqr, UkMsVi, UkUsrIM, UkSimpleTelex, UkSimpleTelex2} UkInputMethod;
 typedef struct _UnikeyOptions UnikeyOptions;
 
-struct _UnikeyOptions
-{
-  int freeMarking;
-  int modernStyle;
-  int macroEnabled;
-  int useUnicodeClipboard;
-  int alwaysMacro;
-  int strictSpellCheck;
-  int useIME; //for Win32 only
-  int spellCheckEnabled;
-  int autoNonVnRestore;
+struct _UnikeyOptions {
+    int freeMarking;
+    int modernStyle;
+    int macroEnabled;
+    int useUnicodeClipboard;
+    int alwaysMacro;
+    int strictSpellCheck;
+    int useIME; //for Win32 only
+    int spellCheckEnabled;
+    int autoNonVnRestore;
 };
 
 #define UKOPT_FLAG_ALL                   0xFFFFFFFF
@@ -63,16 +62,15 @@ struct _UnikeyOptions
 
 #if defined(WIN32)
 typedef struct _UnikeySysInfo UnikeySysInfo;
-struct _UnikeySysInfo
-{
-  int switchKey;
-  HHOOK keyHook;
-  HHOOK mouseHook;
-  HWND hMainDlg;
-  UINT iconMsgId;
-  HICON hVietIcon,hEnIcon;
-  int unicodePlatform;
-  DWORD winMajorVersion, winMinorVersion;
+struct _UnikeySysInfo {
+    int switchKey;
+    HHOOK keyHook;
+    HHOOK mouseHook;
+    HWND hMainDlg;
+    UINT iconMsgId;
+    HICON hVietIcon,hEnIcon;
+    int unicodePlatform;
+    DWORD winMajorVersion, winMinorVersion;
 };
 #endif
 

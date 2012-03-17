@@ -10,11 +10,10 @@
 typedef struct _IBusUnikeyEngine       IBusUnikeyEngine;
 typedef struct _IBusUnikeyEngineClass  IBusUnikeyEngineClass;
 
-struct _IBusUnikeyEngine
-{
+struct _IBusUnikeyEngine {
     IBusEngine parent;
 
-/* members */
+    /* members */
     IBusPropList* prop_list;
     IBusPropList* menu_im;
     IBusPropList* menu_oc;
@@ -32,8 +31,7 @@ struct _IBusUnikeyEngine
     std::string* preeditstr;
 };
 
-struct _IBusUnikeyEngineClass
-{
+struct _IBusUnikeyEngineClass {
     IBusEngineClass parent;
 };
 
@@ -42,14 +40,14 @@ static void ibus_unikey_engine_class_init(IBusUnikeyEngineClass* kclass);
 static void ibus_unikey_engine_init(IBusUnikeyEngine* unikey);
 
 static GObject* ibus_unikey_engine_constructor(GType type,
-                                               guint n_construct_params,
-                                               GObjectConstructParam* construct_params);
+        guint n_construct_params,
+        GObjectConstructParam* construct_params);
 
 static void ibus_unikey_engine_destroy(IBusUnikeyEngine* unikey);
 static gboolean ibus_unikey_engine_process_key_event(IBusEngine* engine,
-                                                     guint keyval,
-                                                     guint keycode,
-                                                     guint modifiers);
+        guint keyval,
+        guint keycode,
+        guint modifiers);
 
 static void ibus_unikey_engine_focus_in(IBusEngine* engine);
 static void ibus_unikey_engine_focus_out(IBusEngine* engine);
@@ -57,13 +55,13 @@ static void ibus_unikey_engine_reset(IBusEngine* engine);
 static void ibus_unikey_engine_enable(IBusEngine* engine);
 static void ibus_unikey_engine_disable(IBusEngine* engine);
 static void ibus_unikey_engine_property_activate(IBusEngine* engine,
-                                                 const gchar* prop_name,
-                                                 guint prop_state);
+        const gchar* prop_name,
+        guint prop_state);
 
 static gboolean ibus_unikey_engine_process_key_event_preedit(IBusEngine* engine,
-                                                             guint keyval,
-                                                             guint keycode,
-                                                             guint modifiers);
+        guint keyval,
+        guint keycode,
+        guint modifiers);
 
 static void ibus_unikey_engine_create_property_list(IBusUnikeyEngine* unikey);
 

@@ -25,17 +25,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define __VN_CONVERT_H
 
 #if defined(_WIN32)
-    #if defined(UNIKEYHOOK)
-        #define DllInterface   __declspec( dllexport )
-    #else
-        #define DllInterface   __declspec( dllimport )
-    #endif
-    #define DllExport   __declspec( dllexport )
-    #define DllImport   __declspec( dllimport )
+#if defined(UNIKEYHOOK)
+#define DllInterface   __declspec( dllexport )
 #else
-    #define DllInterface //not used
-    #define DllExport
-    #define DllImport
+#define DllInterface   __declspec( dllimport )
+#endif
+#define DllExport   __declspec( dllexport )
+#define DllImport   __declspec( dllimport )
+#else
+#define DllInterface //not used
+#define DllExport
+#define DllImport
 #endif
 
 #define CONV_CHARSET_UNICODE	0
@@ -75,10 +75,10 @@ typedef unsigned char UKBYTE;
 #if defined(__cplusplus)
 extern "C" {
 #endif
-DllInterface  int VnConvert(int inCharset, int outCharset, UKBYTE *input, UKBYTE *output, 
-		int * pInLen, int * pMaxOutLen);
+    DllInterface  int VnConvert(int inCharset, int outCharset, UKBYTE *input, UKBYTE *output,
+                                int * pInLen, int * pMaxOutLen);
 
-DllInterface  int VnFileConvert(int inCharset, int outCharset, const char *inFile, const char *outFile);
+    DllInterface  int VnFileConvert(int inCharset, int outCharset, const char *inFile, const char *outFile);
 
 #if defined(__cplusplus)
 }
@@ -87,31 +87,31 @@ DllInterface  int VnFileConvert(int inCharset, int outCharset, const char *inFil
 DllInterface const char * VnConvErrMsg(int errCode);
 
 enum VnConvError {
-	VNCONV_NO_ERROR,
-	VNCONV_UNKNOWN_ERROR,
-	VNCONV_INVALID_CHARSET,
-	VNCONV_ERR_INPUT_FILE,
-	VNCONV_ERR_OUTPUT_FILE,
-	VNCONV_OUT_OF_MEMORY,
-	VNCONV_ERR_WRITING,
-	VNCONV_LAST_ERROR
+    VNCONV_NO_ERROR,
+    VNCONV_UNKNOWN_ERROR,
+    VNCONV_INVALID_CHARSET,
+    VNCONV_ERR_INPUT_FILE,
+    VNCONV_ERR_OUTPUT_FILE,
+    VNCONV_OUT_OF_MEMORY,
+    VNCONV_ERR_WRITING,
+    VNCONV_LAST_ERROR
 };
 
 typedef struct _CharsetNameId CharsetNameId;
 
 struct _CharsetNameId {
-	const char *name;
-	int id;
+    const char *name;
+    int id;
 };
 
 typedef struct _VnConvOptions VnConvOptions;
 
 struct _VnConvOptions {
-	int viqrMixed;
-	int viqrEsc;
-	int toUpper;
-	int toLower;
-	int removeTone;
+    int viqrMixed;
+    int viqrEsc;
+    int toUpper;
+    int toLower;
+    int removeTone;
     int smartViqr;
 };
 

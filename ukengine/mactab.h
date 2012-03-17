@@ -28,29 +28,27 @@
 #include "charset.h"
 
 #if defined(_WIN32)
-    #if defined(UNIKEYHOOK)
-        #define DllInterface   __declspec( dllexport )
-    #else
-        #define DllInterface   __declspec( dllimport )
-    #endif
+#if defined(UNIKEYHOOK)
+#define DllInterface   __declspec( dllexport )
 #else
-    #define DllInterface //not used
-    #define DllExport
-    #define DllImport
+#define DllInterface   __declspec( dllimport )
+#endif
+#else
+#define DllInterface //not used
+#define DllExport
+#define DllImport
 #endif
 
-struct MacroDef
-{
-  int keyOffset;
-  int textOffset;
+struct MacroDef {
+    int keyOffset;
+    int textOffset;
 };
 
 #if !defined(WIN32)
 typedef char TCHAR;
 #endif
 
-class DllInterface CMacroTable
-{
+class DllInterface CMacroTable {
 public:
     void init();
     int loadFromFile(const char *fname);
@@ -59,7 +57,9 @@ public:
     const StdVnChar *lookup(StdVnChar *key);
     const StdVnChar *getKey(int idx);
     const StdVnChar *getText(int idx);
-    int getCount() { return m_count; }
+    int getCount() {
+        return m_count;
+    }
     void resetContent();
     int addItem(const char *item, int charset);
     int addItem(const void *key, const void *text, int charset);
