@@ -94,15 +94,26 @@ string string_diff_end (string newStr, string oldStr) {
 }
 
 static void ibus_unikey_engine_delete_a_char (IBusEngine *engine) {
-    IBusText *text;
-    text = ibus_text_new_from_static_string ((const gchar *) " ");
-    ibus_engine_delete_surrounding_text (engine, -ibus_text_get_length (text),
-                                         ibus_text_get_length (text));
+    // IBusText *text;
+    // text = ibus_text_new_from_static_string ((const gchar *) " ");
+    // ibus_engine_delete_surrounding_text (engine, -ibus_text_get_length (text),
+    //                                      ibus_text_get_length (text));
 
     // Method #2 -- doesn't work
     // char buf[20];
     // sprintf (buf, "%c %c", 8, 8);
     // ibus_unikey_engine_commit_string (engine, buf);
+
+    // Method #3 -- 0x8 is ASCII Backspace
+    // char buf[20];
+    // sprintf (buf, "%c", 8);
+    // ibus_unikey_engine_commit_string (engine, buf);
+
+    // Method #4 -- 127 is ASCII Delete, got from showkey -a
+    // char buf[20];
+    // sprintf (buf, "%c", 127);
+    // ibus_unikey_engine_commit_string (engine, buf);
+
     // DEBUG
     // cerr << "-- DelChar is called --" << endl;
 }
