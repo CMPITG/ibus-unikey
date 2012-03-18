@@ -9,4 +9,10 @@ void ibus_unikey_init (IBusBus* bus);
 void ibus_unikey_exit ();
 GType ibus_unikey_engine_get_type ();
 
+static void ibus_unikey_engine_update_preedit_string2 (IBusEngine *engine,
+                                                       const gchar *string,
+                                                       gboolean visible);
+
+static void ibus_unikey_engine_delete_a_char (IBusEngine *engine);
+
 #endif

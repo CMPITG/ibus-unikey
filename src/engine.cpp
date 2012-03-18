@@ -18,6 +18,7 @@
 #include "utils.h"
 #include "unikey.h"
 #include "vnconv.h"
+#include "engine.h"
 
 // DEBUG
 #include <iostream>
@@ -64,21 +65,6 @@ const unsigned int    Unikey_OC[]        = { CONV_CHARSET_XUTF8,
 const unsigned int    NUM_OUTPUTCHARSET  =
     sizeof (Unikey_OC) / sizeof (Unikey_OC[0]);
 
-static unsigned char WordBreakSyms[] = {
-    ',', ';', ':', '.', '\"', '\'', '!', '?', ' ',
-    '<', '>', '=', '+', '-', '*', '/', '\\',
-    '_', '~', '`', '@', '#', '$', '%', '^', '&', '(', ')', '{', '}', '[', ']',
-    '|'
-};
-
-static unsigned char WordAutoCommit[] = {
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-    'b', 'c', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n',
-    'p', 'q', 'r', 's', 't', 'v', 'x', 'z',
-    'B', 'C', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N',
-    'P', 'Q', 'R', 'S', 'T', 'V', 'X', 'Z'
-};
-
 static IBusEngineClass* parent_class = NULL;
 static IBusConfig*      config       = NULL;
 
@@ -100,11 +86,94 @@ using namespace std;
 static gint old_length = 0;
 static string old_preeditstr = string ("");
 
-string string_diff_end (string newStr, string oldStr) {
+static string getPreeditStr () {
+    return *(unikey->preeditstr);
+}
+
+static bool isMacroEnabled () {
+    return (unikey->ukopt.macroEnabled == 0);
+}
+
+static bool isUsingTelex () {
+    return (unikey->im == UkTelex || unikey->im == UkSimpleTelex2);
+}
+
+static string string_diff_end (string newStr, string oldStr) {
     if (oldStr.length () >= newStr.length ())
         return string ("");
 
     return newStr.substr (oldStr.length());
+}
+
+bool isCombinationOfShift (guint keyval, guint modifiers) {
+    return
+        (unikey->last_key_with_shift == false && (modifiers & IBUS_SHIFT_MASK)
+         && keyval == IBUS_space && !UnikeyAtWordBeginning ())
+        || (keyval == IBUS_Shift_L || keyval == IBUS_Shift_R);
+}
+
+void adjustTonePosition () {
+    if (unikey->oc == CONV_CHARSET_XUTF8) {
+        unikey->preeditstr->append
+            ((const gchar*) UnikeyBuf, UnikeyBufChars);
+    } else {
+        static unsigned char buf[CONVERT_BUF_SIZE];
+        int bufSize = CONVERT_BUF_SIZE;
+
+        latinToUtf (buf, UnikeyBuf, UnikeyBufChars, &bufSize);
+        unikey->preeditstr->append
+            ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
+    }
+}
+
+void processUkEngineData (IBusEngine *engine, guint keyval) {
+    if (UnikeyBackspaces > 0) {
+        if (isOneCharToDelete (getPreeditStr ().length (), UnikeyBackspaces)) {
+            unikey->preeditstr->clear ();
+        } else {
+            ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
+        }
+    }
+    if (UnikeyBufChars > 0) {
+        if (unikey->oc == CONV_CHARSET_XUTF8) {
+            unikey->preeditstr->append
+                ((const gchar*) UnikeyBuf, UnikeyBufChars);
+        } else {
+            static unsigned char buf[CONVERT_BUF_SIZE];
+            int bufSize = CONVERT_BUF_SIZE;
+
+            latinToUtf (buf, UnikeyBuf, UnikeyBufChars, &bufSize);
+            unikey->preeditstr->append
+                ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
+        }
+    } else if (keyval != IBUS_Shift_L && keyval != IBUS_Shift_R) { // if ukengine is not processed
+        static int n;
+        static char s[6];
+
+        n = g_unichar_to_utf8 (keyval, s); // convert ucs4 to utf8 char
+        unikey->preeditstr->append (s, n);
+    }
+}
+
+void processBackspace (IBusEngine *engine) {
+    // Do delete some characters
+    if (isOneCharToDelete (getPreeditStr ().length (), UnikeyBackspaces)) {
+        for (guint i = 0; i < getPreeditStr ().length (); i++)
+            ibus_unikey_engine_delete_a_char (engine);
+        unikey->preeditstr->clear ();
+    } else {
+        // DEBUG
+        ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
+        ibus_unikey_engine_update_preedit_string2
+            (engine, getPreeditStr ().c_str (), true);
+    }
+
+    // Changing the position of the tone after pressing backspace
+    if (UnikeyBufChars > 0) {
+        adjustTonePosition ();
+        ibus_unikey_engine_update_preedit_string2
+            (engine, getPreeditStr ().c_str (), true);
+    }
 }
 
 static void ibus_unikey_engine_delete_a_char (IBusEngine *engine) {
@@ -128,7 +197,7 @@ static void ibus_unikey_engine_delete_a_char (IBusEngine *engine) {
     // sprintf (buf, "%c", 127);
     // ibus_unikey_engine_commit_string (engine, buf);
 
-    // FIXME
+    // Method #5
     // XTestFakeKeyEvent (dsp, IUK_Backspace, True, 500);
     // XTestFakeKeyEvent (dsp, IUK_Backspace, False, 500);
 
@@ -318,8 +387,11 @@ static void ibus_unikey_engine_focus_in (IBusEngine* engine) {
     parent_class->focus_in (engine);
 }
 
+// This is call when a word is committed
 static void ibus_unikey_engine_focus_out (IBusEngine* engine) {
     ibus_unikey_engine_reset (engine);
+    // DEBUG
+    // cerr << "A word is committed!";
 
     parent_class->focus_out (engine);
 }
@@ -333,8 +405,6 @@ static void ibus_unikey_engine_reset (IBusEngine* engine) {
 
     if (unikey->preeditstr->length () > 0) {
         // DEBUG
-        // ibus_engine_hide_preedit_text (engine);
-        // cmpitg
         // cerr << "String to reset: |" << unikey->preeditstr->c_str ()
         //      << "|" << endl
         //      << "|" << old_preeditstr.c_str () << "|" << endl
@@ -760,14 +830,14 @@ static void ibus_unikey_engine_update_preedit_string2
     }
 
     // DEBUG
-    cerr << "---" << endl
-         << "Old length: " << old_length << endl
-         << "New length: " << new_length << endl
-         << "Chars to delete: " << min (old_length, new_length) << endl
-         << "Str: " << unikey->preeditstr->c_str () << endl
+    cerr << "--- Inside update preedit string" << endl
+//         << "Old length: " << old_length << endl
+//         << "New length: " << new_length << endl
+//         << "Chars to delete: " << min (old_length, new_length) << endl
+         << "Preedit string: '" << getPreeditStr () << "'" << endl
          << "---" << endl;
 
-    ibus_unikey_engine_commit_string (engine, unikey->preeditstr->c_str ());
+    ibus_unikey_engine_commit_string (engine, getPreeditStr ().c_str ());
 }
 
 static void ibus_unikey_engine_update_preedit_string
@@ -858,204 +928,125 @@ static gboolean ibus_unikey_engine_process_key_event
 
 static gboolean ibus_unikey_engine_process_key_event_preedit
 (IBusEngine* engine, guint keyval, guint keycode, guint modifiers) {
+
+    // DEBUG
+    // Don't print the information when it's a RELEASE event
+    if (!isKeyRelease(modifiers)) {
+        cerr << endl << endl
+             << "### Processing keyevent ###" << endl
+             << "; Keyval: " << gdk_keyval_name (keyval)
+             << "; Keycode: " << keycode
+             << "; Modifiers: " << modifierNames (modifiers) << endl
+             << "Preedit string before processing: '" << getPreeditStr () << "'" << endl;
+        // cerr << IBUS_space << " " << IBUS_asciitilde << endl;
+    }
+
     // FIXME
     old_length = get_length (unikey->preeditstr);
     old_preeditstr = string (*(unikey->preeditstr));
 
+    // Don't handle RELEASE key event
     if (modifiers & IBUS_RELEASE_MASK)
         return false;
 
-    // cmpitg: a word is committed
-    else if (modifiers & IBUS_CONTROL_MASK
-             || modifiers & IBUS_MOD1_MASK // alternate mask
-             || keyval == IBUS_Control_L
-             || keyval == IBUS_Control_R
-             || keyval == IBUS_Tab
-             || keyval == IBUS_Return
-             || keyval == IBUS_Delete
-             || keyval == IBUS_KP_Enter
-             || (keyval >= IBUS_Home && keyval <= IBUS_Insert)
-             || (keyval >= IBUS_KP_Home && keyval <= IBUS_KP_Delete)) {
-        // The new character is added to the preeditstr, so just
-        // output the whole thing
+    else if (wordIsTerminated (keyval, modifiers)) {
         ibus_unikey_engine_reset (engine);
         return false;
     }
 
-    // when a Shift is pressed
-    else if ((keyval >= IBUS_Caps_Lock && keyval <= IBUS_Hyper_R)
-             || (!(modifiers & IBUS_SHIFT_MASK)
-                 && (keyval == IBUS_Shift_L
-                     || keyval == IBUS_Shift_R))
-        ) {
+    else if (isShiftPressed (keyval, modifiers)) {
         return false;
     }
 
-    // capture BackSpace
-    else if (keyval == IBUS_BackSpace) {
+    else if (isBackspacePressed (keyval)) {
         UnikeyBackspacePress ();
-        // cerr << "(Backspace)" << endl; // DEBUG
 
-        if (UnikeyBackspaces == 0 || unikey->preeditstr->empty ()) {
-            // cerr << "(Backspaces == 0 or empty)" << endl; // DEBUG
+        if (nothingToDelete (UnikeyBackspaces, getPreeditStr ())) {
             ibus_unikey_engine_reset (engine);
             return false;
         } else {
-            if (unikey->preeditstr->length () <= (guint) UnikeyBackspaces) {
-                cerr <<
-                    "(unikey->preeditstr->length () <= (guint) UnikeyBackspaces)"
-                     << endl;
-                ibus_unikey_engine_delete_a_char (engine);
-
-                unikey->preeditstr->clear ();
-                ibus_engine_hide_preedit_text (engine);
-                unikey->auto_commit = true;
-            } else {
-                // DEBUG
-                // ibus_unikey_engine_delete_a_char (engine);
-                // cerr << "(Last backspace)" << endl; // DEBUG
-                ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
-                ibus_unikey_engine_update_preedit_string2
-                    (engine, unikey->preeditstr->c_str (), true);
-            }
-
-            // change tone position after press backspace
-            if (UnikeyBufChars > 0) {
-                if (unikey->oc == CONV_CHARSET_XUTF8) {
-                    unikey->preeditstr->append
-                        ((const gchar*) UnikeyBuf, UnikeyBufChars);
-                } else {
-                    static unsigned char buf[CONVERT_BUF_SIZE];
-                    int bufSize = CONVERT_BUF_SIZE;
-
-                    latinToUtf (buf, UnikeyBuf, UnikeyBufChars, &bufSize);
-                    unikey->preeditstr->append
-                        ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
-                }
-
-                // DEBUG
-                unikey->auto_commit = false;
-                ibus_unikey_engine_update_preedit_string2
-                    (engine, unikey->preeditstr->c_str (), true);
-            }
+            processBackspace (engine);
         }
         return true;
-    } // end capture BackSpace
+    }
 
-    else if (keyval >= IBUS_KP_Multiply && keyval <= IBUS_KP_9) {
+    else if (isNumpadKey (keyval)) {
         ibus_unikey_engine_reset (engine);
         return false;
     }
 
-    // capture ascii printable char
-    // sure this have IBUS_SHIFT_MASK
-    else if ((keyval >= IBUS_space && keyval <=IBUS_asciitilde)
-             || keyval == IBUS_Shift_L || keyval == IBUS_Shift_R) {
-        static guint i;
-
+    else if (isCharacter (keyval)) {
         UnikeySetCapsState
             (modifiers & IBUS_SHIFT_MASK, modifiers & IBUS_LOCK_MASK);
 
-        // process keyval
-
-        // auto commit word that never need to change later in preedit
-        // string (like consonant - phu am).
-        // if macro enabled, then not auto commit. Because macro may
-        // change any word
-        if (unikey->ukopt.macroEnabled == 0
-            && (UnikeyAtWordBeginning () || unikey->auto_commit)) {
-            for (i = 0; i < sizeof (WordAutoCommit); i++) {
-                if (keyval == WordAutoCommit[i]) {
-                    UnikeyPutChar (keyval);
-                    unikey->auto_commit = true;
-                    return false;
-                }
-            }
-        } // end auto commit
-
-        if ((unikey->im == UkTelex || unikey->im == UkSimpleTelex2)
-            && unikey->process_w_at_begin == false
-            && UnikeyAtWordBeginning ()
-            && (keyval == IBUS_w || keyval == IBUS_W)) {
+        //
+        // Processing keyval
+        //
+        // Automatically commit words which never change (such as
+        // consonants, ...), but don't commit if macro is enabled.
+        if ((!isMacroEnabled ()) && isEndingLetter (keyval)) {
             UnikeyPutChar (keyval);
-            if (unikey->ukopt.macroEnabled == 0) {
-                return false;
-            } else {
-                // DEBUG
-                unikey->preeditstr->append (keyval == IBUS_w ? "w" : "W");
-                ibus_unikey_engine_update_preedit_string2
-                    (engine, unikey->preeditstr->c_str (), true);
+            return false;
+        }
+
+        // FIXME
+        // What's this piece of code?
+        //
+        // if (isUsingTelex ()
+        //     && unikey->process_w_at_begin == false
+        //     && UnikeyAtWordBeginning ()
+        //     && (keyval == IBUS_w || keyval == IBUS_W)) {
+        //     // DEBUG
+        //     cerr << "^^^ Useless piece of code???" << endl;
+        //     UnikeyPutChar (keyval);
+        //     if (isMacroEnabled ()) {
+        //         return false;
+        //     } else {
+        //         // DEBUG
+        //         unikey->preeditstr->append (keyval == IBUS_w ? "w" : "W");
+        //         ibus_unikey_engine_update_preedit_string2
+        //             (engine, getPreeditStr ().c_str (), true);
+        //         return true;
+        //     }
+        // }
+
+        // If key event is combination of shift + something
+        if (isCombinationOfShift (keyval, modifiers)) {
+            UnikeyRestoreKeyStrokes ();
+        } else {
+            UnikeyFilter (keyval);
+        }
+        //
+        // end of processing keyval
+        //
+
+        //
+        // Processing result of ukengine
+        // This happens when a character needs to be transform (such
+        // as adding hook, diacritical marks, ...)
+        processUkEngineData (engine, keyval);
+
+        //
+        // Commit string when the last character indicates a word is
+        // completed
+        if (getPreeditStr ().length () > 0) {
+            char lastChar = getPreeditStr ().at (getPreeditStr ().length () - 1);
+            // DEBUG
+            // cerr << "; Last char: " << lastChar
+            //      << "; Is word-break symbol? " << isWordBreakSym (lastChar)
+            //      << "; Keyval: " << keyval << endl;
+            if (lastChar == keyval && isWordBreakSym (lastChar)) {
+                ibus_unikey_engine_reset (engine);
                 return true;
             }
         }
 
-        unikey->auto_commit = false;
-
-        // shift + space, shift + shift event
-        if ((unikey->last_key_with_shift == false && modifiers & IBUS_SHIFT_MASK
-             && keyval == IBUS_space && !UnikeyAtWordBeginning ())
-            || (keyval == IBUS_Shift_L || keyval == IBUS_Shift_R) // (&& modifiers & IBUS_SHIFT_MASK), sure this have IBUS_SHIFT_MASK
-            ) {
-            UnikeyRestoreKeyStrokes ();
-        } // end shift + space, shift + shift event
-
-        else {
-            UnikeyFilter (keyval);
-        }
-        // end process keyval
-
-        // process result of ukengine
-        if (UnikeyBackspaces > 0) {
-            if (unikey->preeditstr->length () <= (guint) UnikeyBackspaces) {
-                unikey->preeditstr->clear ();
-            } else {
-                ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
-            }
-        }
-
-        if (UnikeyBufChars > 0) {
-            if (unikey->oc == CONV_CHARSET_XUTF8) {
-                unikey->preeditstr->append
-                    ((const gchar*)UnikeyBuf, UnikeyBufChars);
-            } else {
-                static unsigned char buf[CONVERT_BUF_SIZE];
-                int bufSize = CONVERT_BUF_SIZE;
-
-                latinToUtf (buf, UnikeyBuf, UnikeyBufChars, &bufSize);
-                unikey->preeditstr->append
-                    ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
-            }
-        } else if (keyval != IBUS_Shift_L && keyval != IBUS_Shift_R) { // if ukengine not process
-            static int n;
-            static char s[6];
-
-            n = g_unichar_to_utf8 (keyval, s); // convert ucs4 to utf8 char
-            unikey->preeditstr->append (s, n);
-        }
-        // end process result of ukengine
-
-        // commit string: if need
-        if (unikey->preeditstr->length () > 0) {
-            static guint i;
-            for (i = 0; i < sizeof (WordBreakSyms); i++) {
-                if (WordBreakSyms[i] ==
-                    unikey->preeditstr->at (unikey->preeditstr->length () - 1)
-                    && WordBreakSyms[i] == keyval) {
-                    ibus_unikey_engine_reset (engine);
-                    return true;
-                }
-            }
-        }
-        // end commit string
-
-        // DEBUG
+        //
+        // Commit everything left
         ibus_unikey_engine_update_preedit_string2
             (engine, unikey->preeditstr->c_str (), true);
         return true;
-    } // end capture printable char
-
-    // non process key
-    // DEBUG
+    }
 
     ibus_unikey_engine_reset (engine);
     return false;
