@@ -1,3 +1,8 @@
+// Problems: Backspaces are sent after the string has been committed
+// TODO:
+// * Find out where Backspaces are caught
+// * Proceed Backspaces before committing
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -17,6 +22,10 @@
 // DEBUG
 #include <iostream>
 #include <string>
+#include <gdk/gdk.h>
+#include <gdk/gdkkeysyms.h>
+#include <gdk/gdkx.h>
+#include <X11/extensions/XTest.h>
 
 // ibus below version 1.2.99 have problem with PROP_TYPE_NORMAL, use
 // RADIO instead
@@ -80,6 +89,11 @@ static IBusUnikeyEngine* unikey; // current (focus) unikey engine
 static gboolean mcap_running;
 
 // cmpitg
+static Display* dsp;
+static KeyCode IUK_Backspace;
+
+static bool pendingCommitted = false;
+static gint nBackspaces = 0;
 
 using namespace std;
 
@@ -94,10 +108,10 @@ string string_diff_end (string newStr, string oldStr) {
 }
 
 static void ibus_unikey_engine_delete_a_char (IBusEngine *engine) {
-    // IBusText *text;
-    // text = ibus_text_new_from_static_string ((const gchar *) " ");
-    // ibus_engine_delete_surrounding_text (engine, -ibus_text_get_length (text),
-    //                                      ibus_text_get_length (text));
+    IBusText *text;
+    text = ibus_text_new_from_static_string ((const gchar *) " ");
+    ibus_engine_delete_surrounding_text (engine, -ibus_text_get_length (text),
+                                         ibus_text_get_length (text));
 
     // Method #2 -- doesn't work
     // char buf[20];
@@ -114,8 +128,12 @@ static void ibus_unikey_engine_delete_a_char (IBusEngine *engine) {
     // sprintf (buf, "%c", 127);
     // ibus_unikey_engine_commit_string (engine, buf);
 
+    // FIXME
+    // XTestFakeKeyEvent (dsp, IUK_Backspace, True, 500);
+    // XTestFakeKeyEvent (dsp, IUK_Backspace, False, 500);
+
     // DEBUG
-    // cerr << "-- DelChar is called --" << endl;
+    cerr << "-- DelChar is called --" << endl;
 }
 
 GType ibus_unikey_engine_get_type (void) {
@@ -181,6 +199,14 @@ static void ibus_unikey_engine_class_init (IBusUnikeyEngineClass* klass) {
 }
 
 static void ibus_unikey_engine_init (IBusUnikeyEngine* unikey) {
+    // FIXME
+    gint *argc = 0;
+    gchar ***argv = 0;
+    gdk_init(argc, argv);
+
+    dsp = (Display *) gdk_x11_get_default_xdisplay ();
+    IUK_Backspace = XKeysymToKeycode(dsp, XK_BackSpace);
+
     gchar* str;
     gboolean b;
     guint i;
@@ -734,11 +760,12 @@ static void ibus_unikey_engine_update_preedit_string2
     }
 
     // DEBUG
-    // cerr << "---" << endl
-    //      << "Old length: " << old_length << endl
-    //      << "New length: " << new_length << endl
-    //      << "Chars to delete: " << min (old_length, new_length)
-    //      << "---" << endl;
+    cerr << "---" << endl
+         << "Old length: " << old_length << endl
+         << "New length: " << new_length << endl
+         << "Chars to delete: " << min (old_length, new_length) << endl
+         << "Str: " << unikey->preeditstr->c_str () << endl
+         << "---" << endl;
 
     ibus_unikey_engine_commit_string (engine, unikey->preeditstr->c_str ());
 }
