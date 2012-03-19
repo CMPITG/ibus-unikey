@@ -866,23 +866,22 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
              << "; Keycode: " << keycode
              << "; Modifiers: " << modifierNames (modifiers) << endl
              << "Preedit string before processing: '" << getPreeditStr () << "'" << endl;
-        // cerr << IBUS_space << " " << IBUS_asciitilde << endl;
     }
 
     // Don't handle RELEASE key event
     if (modifiers & IBUS_RELEASE_MASK)
         return false;
 
-    else if (wordIsTerminated (keyval, modifiers)) {
+    if (wordIsTerminated (keyval, modifiers)) {
         ibus_unikey_engine_reset (engine);
         return false;
     }
 
-    else if (isShiftPressed (keyval, modifiers)) {
+    if (isShiftPressed (keyval, modifiers)) {
         return false;
     }
 
-    else if (isBackspacePressed (keyval)) {
+    if (isBackspacePressed (keyval)) {
         UnikeyBackspacePress ();
 
         if (nothingToDelete (UnikeyBackspaces, getPreeditStr ())) {
@@ -894,12 +893,12 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
         return true;
     }
 
-    else if (isNumpadKey (keyval)) {
+    if (isNumpadKey (keyval)) {
         ibus_unikey_engine_reset (engine);
         return false;
     }
 
-    else if (isCharacter (keyval)) {
+    if (isCharacter (keyval)) {
         UnikeySetCapsState
             (modifiers & IBUS_SHIFT_MASK, modifiers & IBUS_LOCK_MASK);
 
