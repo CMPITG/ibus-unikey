@@ -83,8 +83,7 @@ static gint nBackspaces = 0;
 
 using namespace std;
 
-static gint old_length = 0;
-static string old_preeditstr = string ("");
+static string oldPreeditStr = "";
 
 static string getPreeditStr () {
     return *(unikey->preeditstr);
@@ -96,13 +95,6 @@ static bool isMacroEnabled () {
 
 static bool isUsingTelex () {
     return (unikey->im == UkTelex || unikey->im == UkSimpleTelex2);
-}
-
-static string string_diff_end (string newStr, string oldStr) {
-    if (oldStr.length () >= newStr.length ())
-        return string ("");
-
-    return newStr.substr (oldStr.length());
 }
 
 bool isCombinationOfShift (guint keyval, guint modifiers) {
@@ -174,6 +166,12 @@ void processBackspace (IBusEngine *engine) {
         ibus_unikey_engine_update_preedit_string2
             (engine, getPreeditStr ().c_str (), true);
     }
+}
+
+static guint getIbusTextLength (string str) {
+    IBusText *text;
+    text = ibus_text_new_from_static_string ((const gchar *) str.c_str ());
+    return ibus_text_get_length (text);
 }
 
 static void ibus_unikey_engine_delete_a_char (IBusEngine *engine) {
@@ -403,25 +401,17 @@ static void ibus_unikey_engine_reset (IBusEngine* engine) {
 
     UnikeyResetBuf ();
 
+    // FIXME
+    // This is probably not necessary because the string is always committed
     if (unikey->preeditstr->length () > 0) {
-        // DEBUG
-        // cerr << "String to reset: |" << unikey->preeditstr->c_str ()
-        //      << "|" << endl
-        //      << "|" << old_preeditstr.c_str () << "|" << endl
-        //      << strcmp (old_preeditstr.c_str (),
-        //                 unikey->preeditstr->c_str ()) << endl
-        //      << "@" << string_diff_end (*unikey->preeditstr,
-        //                                 old_preeditstr) << "@" << endl;
         // ibus_unikey_engine_commit_string
-        //     (engine, last_p_char (unikey->preeditstr->c_str ()));
-        // ibus_unikey_engine_commit_string
-        //     (engine, unikey->preeditstr->c_str ());
-        ibus_unikey_engine_commit_string
-            (engine, string_diff_end (*unikey->preeditstr,
-                                      old_preeditstr).c_str ());
+        //     (engine, getPreeditStr ().c_str ());
+        ibus_unikey_engine_update_preedit_string2
+            (engine, getPreeditStr ().c_str () ,true);
 
         unikey->preeditstr->clear ();
     }
+    // unikey->preeditstr->clear ();
 
     parent_class->reset (engine);
 }
@@ -799,77 +789,33 @@ static void ibus_unikey_engine_commit_string
     ibus_engine_commit_text (engine, text);
 }
 
-// cmpitg
-// FIXME
-// Instead of update the preedit_string, the preeditstr is committed but without erasing
-static gint min (gint a, gint b) {
-    return a < b ? a : b;
-}
-
-static gint get_length (string *s) {
-    IBusText *text;
-    text = ibus_text_new_from_static_string (s->c_str ());
-    return ibus_text_get_length (text);
-}
-
 static void ibus_unikey_engine_update_preedit_string2
 (IBusEngine *engine, const gchar *string, gboolean visible) {
-    // DEBUG
-    // FIXME: Just delete when it's changed
-    IBusText *text;
-    gint new_length;
+    // FIXME
 
-    text = ibus_text_new_from_static_string (string);
-    new_length = ibus_text_get_length (text);
-    if (old_length != 0) {
-        // ibus_engine_delete_surrounding_text (engine, -min (old_length, new_length),
-        //                                      min (old_length, new_length));
-        for (int i = 0; i < min (old_length, new_length); i++) {
-            ibus_unikey_engine_delete_a_char (engine);
-        }
-    }
+    // Delete the old preedit string.  Note that the multibyte-string
+    // length is different from usual string length.
+    for (guint i = 0; i < getIbusTextLength (oldPreeditStr); i++)
+        ibus_unikey_engine_delete_a_char (engine);
 
-    // DEBUG
-    cerr << "--- Inside update preedit string" << endl
-//         << "Old length: " << old_length << endl
-//         << "New length: " << new_length << endl
-//         << "Chars to delete: " << min (old_length, new_length) << endl
-         << "Preedit string: '" << getPreeditStr () << "'" << endl
-         << "---" << endl;
-
+    // Then commit the new one
     ibus_unikey_engine_commit_string (engine, getPreeditStr ().c_str ());
+
+    // DEBUG
+    // cerr << "[[[ Inside update preedit string ]]]" << endl
+    //      << "* Old string: " << oldPreeditStr << endl
+    //      << "  Num chars old: " << oldPreeditStr.length () << endl
+    //      << "  " << getIbusTextLength (oldPreeditStr) << endl
+    //      << "* Preedit string: '" << getPreeditStr () << "'" << endl
+    //      << "  Num chars new: " << getPreeditStr ().length () << endl
+    //      << "---" << endl;
 }
 
-static void ibus_unikey_engine_update_preedit_string
-(IBusEngine *engine, const gchar *string, gboolean visible) {
-    IBusText *text;
-
-    unikey = (IBusUnikeyEngine*) engine;
-
-    text = ibus_text_new_from_static_string (string);
-
-    // underline text
-    ibus_text_append_attribute (text, IBUS_ATTR_TYPE_UNDERLINE,
-                                IBUS_ATTR_UNDERLINE_SINGLE, 0, -1);
-
-    // update and display text
-    ibus_engine_update_preedit_text (engine, text,
-                                     ibus_text_get_length (text), visible);
-
-    if (unikey->mouse_capture) {
-        // unlock capture thread (start capture)
-        pthread_mutex_unlock (&mutex_mcap);
-    }
-}
-
-// DEBUG
+// FIXME
 // This is called when a char in preedit text is changed
 static void ibus_unikey_engine_erase_chars (IBusEngine *engine, int num_chars) {
     int i, k;
     guchar c;
-    // cmpitg
-    gint oldLength = get_length (unikey->preeditstr);
-
     unikey = (IBusUnikeyEngine*) engine;
     k = num_chars;
 
@@ -883,16 +829,6 @@ static void ibus_unikey_engine_erase_chars (IBusEngine *engine, int num_chars) {
     }
 
     unikey->preeditstr->erase (i + 1);
-    gint newLength = get_length (unikey->preeditstr);
-    // DEBUG
-    // Delete in the buffer as well
-    // cerr << "erase_ " << newLength << " " << oldLength << endl;
-    gint charsToDelete = oldLength - newLength;
-    for (k = 0; k < charsToDelete; k++) {
-        ibus_unikey_engine_delete_a_char (engine);
-        // Because a char is deleted, the old length should changed as well
-        old_length--;
-    }
 }
 
 static gboolean ibus_unikey_engine_process_key_event
@@ -901,13 +837,6 @@ static gboolean ibus_unikey_engine_process_key_event
 
     unikey = (IBusUnikeyEngine*) engine;
 
-    // DEBUG
-    // This piece of code is used to monitor pre-edit string for each
-    // key pressed
-    // cerr << "=== Processing key ===" << endl
-    //           << "[before] " << unikey->preeditstr->length ()
-    //           << " |" << unikey->preeditstr->c_str () << "|"
-    //           << endl;
     tmp = ibus_unikey_engine_process_key_event_preedit
         (engine, keyval, keycode, modifiers);
 
@@ -918,16 +847,12 @@ static gboolean ibus_unikey_engine_process_key_event
         unikey->last_key_with_shift = false;
     } // end check last keyevent with shift
 
-    // DEBUG
-    // cerr << "[after] " << unikey->preeditstr->length ()
-    //           << " |" << unikey->preeditstr->c_str () << "|"
-    //           << endl << endl;
-
     return tmp;
 }
 
 static gboolean ibus_unikey_engine_process_key_event_preedit
 (IBusEngine* engine, guint keyval, guint keycode, guint modifiers) {
+    oldPreeditStr = getPreeditStr ();
 
     // DEBUG
     // Don't print the information when it's a RELEASE event
@@ -940,10 +865,6 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
              << "Preedit string before processing: '" << getPreeditStr () << "'" << endl;
         // cerr << IBUS_space << " " << IBUS_asciitilde << endl;
     }
-
-    // FIXME
-    old_length = get_length (unikey->preeditstr);
-    old_preeditstr = string (*(unikey->preeditstr));
 
     // Don't handle RELEASE key event
     if (modifiers & IBUS_RELEASE_MASK)
@@ -1030,7 +951,7 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
         // Commit string when the last character indicates a word is
         // completed
         if (getPreeditStr ().length () > 0) {
-            char lastChar = getPreeditStr ().at (getPreeditStr ().length () - 1);
+            guint lastChar = getPreeditStr ().at (getPreeditStr ().length () - 1);
             // DEBUG
             // cerr << "; Last char: " << lastChar
             //      << "; Is word-break symbol? " << isWordBreakSym (lastChar)
