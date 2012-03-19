@@ -855,8 +855,6 @@ static gboolean ibus_unikey_engine_process_key_event
 
 static gboolean ibus_unikey_engine_process_key_event_preedit
 (IBusEngine* engine, guint keyval, guint keycode, guint modifiers) {
-    oldPreeditStr = getPreeditStr ();
-
     // DEBUG
     // Don't print the information when it's a RELEASE event
     if (!isKeyRelease(modifiers)) {
@@ -872,14 +870,7 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
     if (modifiers & IBUS_RELEASE_MASK)
         return false;
 
-    if (wordIsTerminated (keyval, modifiers)) {
-        ibus_unikey_engine_reset (engine);
-        return false;
-    }
-
-    if (isShiftPressed (keyval, modifiers)) {
-        return false;
-    }
+    oldPreeditStr = getPreeditStr ();
 
     if (isBackspacePressed (keyval)) {
         UnikeyBackspacePress ();
@@ -891,6 +882,15 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
             processBackspace (engine);
         }
         return true;
+    }
+
+    if (wordIsTerminated (keyval, modifiers)) {
+        ibus_unikey_engine_reset (engine);
+        return false;
+    }
+
+    if (isShiftPressed (keyval, modifiers)) {
+        return false;
     }
 
     if (isNumpadKey (keyval)) {
