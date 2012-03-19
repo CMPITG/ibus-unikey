@@ -150,8 +150,9 @@ void processUkEngineData (IBusEngine *engine, guint keyval) {
 void processBackspace (IBusEngine *engine) {
     // Do delete some characters
     if (isOneCharToDelete (getPreeditStr ().length (), UnikeyBackspaces)) {
-        for (guint i = 0; i < getPreeditStr ().length (); i++)
-            ibus_unikey_engine_delete_a_char (engine);
+        // for (guint i = 0; i < getPreeditStr ().length (); i++)
+        //     ibus_unikey_engine_delete_a_char (engine);
+        ibus_unikey_engine_delete_a_char (engine);
         unikey->preeditstr->clear ();
     } else {
         // DEBUG
@@ -175,10 +176,12 @@ static guint getIbusTextLength (string str) {
 }
 
 static void ibus_unikey_engine_delete_a_char (IBusEngine *engine) {
-    IBusText *text;
-    text = ibus_text_new_from_static_string ((const gchar *) " ");
-    ibus_engine_delete_surrounding_text (engine, -ibus_text_get_length (text),
-                                         ibus_text_get_length (text));
+    // IBusText *text;
+    // text = ibus_text_new_from_static_string ((const gchar *) " ");
+    // ibus_engine_delete_surrounding_text (engine, -ibus_text_get_length (text),
+    //                                      ibus_text_get_length (text));
+
+    ibus_engine_delete_surrounding_text (engine, -1, 1);
 
     // Method #2 -- doesn't work
     // char buf[20];
@@ -801,17 +804,17 @@ static void ibus_unikey_engine_update_preedit_string2
     // Then commit the new one
     ibus_unikey_engine_commit_string (engine, getPreeditStr ().c_str ());
 
+    oldPreeditStr = getPreeditStr ();
+
     // DEBUG
-    // cerr << "[[[ Inside update preedit string ]]]" << endl
-    //      << "* Old string: " << oldPreeditStr << endl
-    //      << "  Num chars old: " << oldPreeditStr.length () << endl
-    //      << "  " << getIbusTextLength (oldPreeditStr) << endl
-    //      << "* Preedit string: '" << getPreeditStr () << "'" << endl
-    //      << "  Num chars new: " << getPreeditStr ().length () << endl
-    //      << "---" << endl;
+    cerr << "[[[ Inside update preedit string ]]]" << endl
+         << "* Old string: " << oldPreeditStr << endl
+//         << "  Num chars old: " << getIbusTextLength (oldPreeditStr) << endl
+         << "* Preedit string: '" << getPreeditStr () << "'" << endl
+//         << "  Num chars new: " << getPreeditStr ().length () << endl
+         << "---" << endl;
 }
 
-// FIXME
 // This is called when a char in preedit text is changed
 static void ibus_unikey_engine_erase_chars (IBusEngine *engine, int num_chars) {
     int i, k;

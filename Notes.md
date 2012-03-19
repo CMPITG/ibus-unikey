@@ -7,6 +7,8 @@
 
     void ibus_unikey_init (IBusBus* bus)
 
+* Attention: Backspace with changing diacritical marks: "hoạt" + Backspace
+
 * Whenever you work with preeditstr, use std::string's functions.  Whenever
   you work with ibus text, use ibus_text_* functions.
 
