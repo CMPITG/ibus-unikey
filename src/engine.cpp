@@ -156,6 +156,7 @@ void processBackspace (IBusEngine *engine) {
         unikey->preeditstr->clear ();
     } else {
         // DEBUG
+        cerr << "; Erase chars and update preedit string" << endl;
         ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
         ibus_unikey_engine_update_preedit_string2
             (engine, getPreeditStr ().c_str (), true);
@@ -873,12 +874,16 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
     oldPreeditStr = getPreeditStr ();
 
     if (isBackspacePressed (keyval)) {
+        // DEBUG
+        cerr << "``` Handling Backspace..." << endl;
         UnikeyBackspacePress ();
 
         if (nothingToDelete (UnikeyBackspaces, getPreeditStr ())) {
             ibus_unikey_engine_reset (engine);
             return false;
         } else {
+            // DEBUG
+            cerr << "``` Processing Backspace..." << endl;
             processBackspace (engine);
         }
         return true;
