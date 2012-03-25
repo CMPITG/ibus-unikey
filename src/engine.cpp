@@ -805,27 +805,42 @@ IBusText *makeIbusText (const gchar *str) {
 }
 
 void createIMMenu (IBusUnikeyEngine* engine) {
-    IBusText* label,* tooltip;
+    IBusText *label;
     gchar name[32];
 
     for (int i = 0; i < NUM_INPUTMETHOD; i++) {
         label = makeIbusText (Unikey_IMNames[i]);
-        tooltip = makeIbusText ("");
         sprintf (name, CONFIG_INPUTMETHOD"_%s", Unikey_IMNames[i]);
 
-        addMenu (unikey->menu_im,
+        addMenu (engine->menu_im,
                  name, PROP_TYPE_RADIO, label, "",
-                 tooltip, TRUE, TRUE,
-                 (Unikey_IM[i] == unikey->im) ?
+                 makeIbusText (""), TRUE, TRUE,
+                 (Unikey_IM[i] == engine->im) ?
                  PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
                  NULL);
     }
 }
 
-static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey) {
-    IBusProperty* prop;
-    IBusText* label,* tooltip;
+void createOutputCharsetMenu (IBusUnikeyEngine *engine) {
+    IBusText *label;
     gchar name[32];
+
+    for (int i = 0; i < NUM_OUTPUTCHARSET; i++) {
+        label = makeIbusText (Unikey_OCNames[i]);
+        sprintf (name, CONFIG_OUTPUTCHARSET"_%s", Unikey_OCNames[i]);
+
+        addMenu (engine->menu_oc,
+                 name, PROP_TYPE_RADIO, label, "",
+                 makeIbusText (""), TRUE, TRUE,
+                 (Unikey_OC[i] == engine->oc) ?
+                 PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
+                 NULL);
+    }
+
+}
+
+static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey) {
+    IBusText* label,* tooltip;
     guint i;
 
     unikey->prop_list = ibus_prop_list_new ();
@@ -835,45 +850,15 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey) {
 
     g_object_ref_sink (unikey->prop_list);
 
-// create input method menu
-//    createIMMenu (unikey);
-    for (int i = 0; i < NUM_INPUTMETHOD; i++) {
-        label = makeIbusText (Unikey_IMNames[i]);
-        tooltip = makeIbusText ("");
-        sprintf (name, CONFIG_INPUTMETHOD"_%s", Unikey_IMNames[i]);
-
-        addMenu (unikey->menu_im,
-                 name, PROP_TYPE_RADIO, label, "",
-                 tooltip, TRUE, TRUE,
-                 (Unikey_IM[i] == unikey->im) ?
-                 PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
-                 NULL);
-    }
-
-// END create input method menu
-
-// create output charset menu
-    // add item
-    for (i = 0; i < NUM_OUTPUTCHARSET; i++) {
-        label = ibus_text_new_from_static_string (Unikey_OCNames[i]);
-        tooltip = ibus_text_new_from_static_string (""); // ?
-        sprintf (name, CONFIG_OUTPUTCHARSET"_%s", Unikey_OCNames[i]);
-        addMenu (unikey->menu_oc,
-                 name, PROP_TYPE_RADIO, label, "",
-                 tooltip, TRUE, TRUE,
-                 (Unikey_OC[i] == unikey->oc) ?
-                 PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
-                 NULL);
-    }
-// END create output charset menu
+    createIMMenu (unikey);
+    createOutputCharsetMenu (unikey);
 
 // create option menu (for configure unikey)
     // add option property
 
     // --create and add spellcheck property
-    label = ibus_text_new_from_static_string (_("Enable spell check"));
-    tooltip =
-        ibus_text_new_from_static_string
+    label = makeIbusText (_("Enable spell check"));
+    tooltip = makeIbusText
         (_("If enable, you can decrease mistake when typing"));
     addMenu (unikey->menu_opt,
              CONFIG_SPELLCHECK, PROP_TYPE_TOGGLE, label, "",
@@ -883,8 +868,8 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey) {
              NULL);
 
     // --create and add macroEnabled property
-    label = ibus_text_new_from_static_string (_("Enable Macro"));
-    tooltip = ibus_text_new_from_static_string ("");
+    label = makeIbusText (_("Enable Macro"));
+    tooltip = makeIbusText ("");
     addMenu (unikey->menu_opt,
              CONFIG_MACROENABLED, PROP_TYPE_TOGGLE, label, "",
              tooltip, TRUE, TRUE,
@@ -893,9 +878,9 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey) {
              NULL);
 
     // --create and add MouseCapture property
-    label = ibus_text_new_from_static_string (_("Capture mouse event"));
+    label = makeIbusText (_("Capture mouse event"));
     tooltip =
-        ibus_text_new_from_static_string
+        makeIbusText
         (_("Auto send PreEdit string to Application when mouse move or click"));
     addMenu (unikey->menu_opt,
              CONFIG_MOUSECAPTURE, PROP_TYPE_TOGGLE, label, "",
@@ -910,8 +895,8 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey) {
              PROP_STATE_UNCHECKED, NULL);
 
     // --create and add Launch Setup GUI property
-    label = ibus_text_new_from_static_string (_("Full setup..."));
-    tooltip = ibus_text_new_from_static_string
+    label = makeIbusText (_("Full setup..."));
+    tooltip = makeIbusText
         (_("Full setup utility for IBus-Unikey"));
     addMenu (unikey->menu_opt,
              "RunSetupGUI", PROP_TYPE_NORMAL, label, "",
@@ -925,8 +910,8 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey) {
         if (Unikey_IM[i] == unikey->im)
             break;
     }
-    label = ibus_text_new_from_static_string (Unikey_IMNames[i]);
-    tooltip = ibus_text_new_from_static_string (_("Choose input method"));
+    label = makeIbusText (Unikey_IMNames[i]);
+    tooltip = makeIbusText (_("Choose input method"));
     addMenu (unikey->prop_list,
              CONFIG_INPUTMETHOD, PROP_TYPE_MENU, label, "",
              tooltip, TRUE, TRUE, PROP_STATE_UNCHECKED, unikey->menu_im);
@@ -936,15 +921,15 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey) {
         if (Unikey_OC[i] == unikey->oc)
             break;
 
-    label = ibus_text_new_from_static_string (Unikey_OCNames[i]);
-    tooltip = ibus_text_new_from_static_string (_("Choose output charset"));
+    label = makeIbusText (Unikey_OCNames[i]);
+    tooltip = makeIbusText (_("Choose output charset"));
     addMenu (unikey->prop_list, CONFIG_OUTPUTCHARSET,
              PROP_TYPE_MENU, label, "", tooltip,
              TRUE, TRUE, PROP_STATE_UNCHECKED, unikey->menu_oc);
 
     // -- add option menu
-    label = ibus_text_new_from_static_string (_("Options"));
-    tooltip = ibus_text_new_from_static_string (_("Options for Unikey"));
+    label = makeIbusText (_("Options"));
+    tooltip = makeIbusText (_("Options for Unikey"));
     addMenu (unikey->prop_list,
              "Options", PROP_TYPE_MENU, label, "gtk-preferences",
              tooltip, TRUE, TRUE, PROP_STATE_UNCHECKED, unikey->menu_opt);

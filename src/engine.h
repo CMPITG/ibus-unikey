@@ -68,6 +68,8 @@ static void addMenu (IBusPropList *engineProp,
                      gboolean visible,
                      IBusPropState state,
                      IBusPropList *prop_list);
+void createIMMenu (IBusUnikeyEngine* engine);
+void createOutputCharsetMenu (IBusUnikeyEngine *engine);
 
 /* Engine setup functions */
 void ibus_unikey_init (IBusBus* bus);
