@@ -58,16 +58,16 @@ static bool isMacroEnabled ();
 static bool isUsingTelex ();
 bool isCombinationOfShift (guint keyval, guint modifiers);
 static guint getIbusTextLength (string str);
-static void addProperty (IBusPropList *engineProp,
-                         const gchar *key,
-                         IBusPropType type,
-                         IBusText *label,
-                         const gchar *icon,
-                         IBusText *tooltip,
-                         gboolean sensitive,
-                         gboolean visible,
-                         IBusPropState state,
-                         IBusPropList *prop_list);
+static void addMenu (IBusPropList *engineProp,
+                     const gchar *key,
+                     IBusPropType type,
+                     IBusText *label,
+                     const gchar *icon,
+                     IBusText *tooltip,
+                     gboolean sensitive,
+                     gboolean visible,
+                     IBusPropState state,
+                     IBusPropList *prop_list);
 
 /* Engine setup functions */
 void ibus_unikey_init (IBusBus* bus);
