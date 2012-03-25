@@ -58,6 +58,9 @@ static bool isMacroEnabled ();
 static bool isUsingTelex ();
 bool isCombinationOfShift (guint keyval, guint modifiers);
 static guint getIbusTextLength (string str);
+static guint getIdxCurrentIM (IBusUnikeyEngine *engine);
+static guint getIdxCurrentOutputCharset (IBusUnikeyEngine *engine);
+IBusText *makeIbusText (const gchar *str);
 static void addMenu (IBusPropList *engineProp,
                      const gchar *key,
                      IBusPropType type,
@@ -68,8 +71,12 @@ static void addMenu (IBusPropList *engineProp,
                      gboolean visible,
                      IBusPropState state,
                      IBusPropList *prop_list);
-void createIMMenu (IBusUnikeyEngine* engine);
-void createOutputCharsetMenu (IBusUnikeyEngine *engine);
+static void createIMMenu (IBusUnikeyEngine* engine);
+static void createOutputCharsetMenu (IBusUnikeyEngine *engine);
+static void createOptionMenu (IBusUnikeyEngine *engine);
+static void createTopIMMenu (IBusUnikeyEngine *engine);
+static void createTopOutputCharsetMenu (IBusUnikeyEngine *engine);
+static void createTopOptionMenu (IBusUnikeyEngine *engine);
 
 /* Engine setup functions */
 void ibus_unikey_init (IBusBus* bus);

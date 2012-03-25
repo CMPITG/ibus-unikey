@@ -58,77 +58,8 @@ static gint nBackspaces = 0;
 
 static string oldPreeditStr = "";
 
-void adjustTonePosition () {
-    if (unikey->oc == CONV_CHARSET_XUTF8) {
-        unikey->preeditstr->append
-            ((const gchar*) UnikeyBuf, UnikeyBufChars);
-    } else {
-        static unsigned char buf[CONVERT_BUF_SIZE];
-        int bufSize = CONVERT_BUF_SIZE;
-
-        latinToUtf (buf, UnikeyBuf, UnikeyBufChars, &bufSize);
-        unikey->preeditstr->append
-            ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
-    }
-}
-
-void processUkEngineData (IBusEngine *engine, guint keyval) {
-    if (UnikeyBackspaces > 0) {
-        if (isOneCharToDelete (getPreeditStr ().length (), UnikeyBackspaces)) {
-            unikey->preeditstr->clear ();
-        } else {
-            ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
-        }
-    }
-    if (UnikeyBufChars > 0) {
-        if (unikey->oc == CONV_CHARSET_XUTF8) {
-            unikey->preeditstr->append
-                ((const gchar*) UnikeyBuf, UnikeyBufChars);
-        } else {
-            static unsigned char buf[CONVERT_BUF_SIZE];
-            int bufSize = CONVERT_BUF_SIZE;
-
-            latinToUtf (buf, UnikeyBuf, UnikeyBufChars, &bufSize);
-            unikey->preeditstr->append
-                ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
-        }
-    } else if (keyval != IBUS_Shift_L && keyval != IBUS_Shift_R) { // if ukengine is not processed
-        static int n;
-        static char s[6];
-
-        n = g_unichar_to_utf8 (keyval, s); // convert ucs4 to utf8 char
-        unikey->preeditstr->append (s, n);
-    }
-}
-
-void processBackspace (IBusEngine *engine) {
-    // Do delete some characters
-    if (isOneCharToDelete (getPreeditStr ().length (), UnikeyBackspaces)) {
-        ibus_unikey_engine_delete_a_char (engine);
-        unikey->preeditstr->clear ();
-    } else {
-        // DEBUG
-        cerr << "; Erase chars and update preedit string" << endl;
-        ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
-        ibus_unikey_engine_update_preedit_string2
-            (engine, getPreeditStr ().c_str (), true);
-    }
-
-    // Changing the position of the tone after pressing backspace
-    if (UnikeyBufChars > 0) {
-        adjustTonePosition ();
-        ibus_unikey_engine_update_preedit_string2
-            (engine, getPreeditStr ().c_str (), true);
-    }
-}
-
 static void ibus_unikey_engine_delete_a_char (IBusEngine *engine) {
-    // IBusText *text;
-    // text = ibus_text_new_from_static_string ((const gchar *) " ");
-    // ibus_engine_delete_surrounding_text (engine, -ibus_text_get_length (text),
-    //                                      ibus_text_get_length (text));
-
-    // ibus_engine_delete_surrounding_text (engine, -1, 1);
+    ibus_engine_delete_surrounding_text (engine, -1, 1);
 
     // Method #2 -- doesn't work
     // char buf[20];
@@ -146,11 +77,33 @@ static void ibus_unikey_engine_delete_a_char (IBusEngine *engine) {
     // ibus_unikey_engine_commit_string (engine, buf);
 
     // Method #5
-    XTestFakeKeyEvent (dsp, IUK_Backspace, True, 1);
-    XTestFakeKeyEvent (dsp, IUK_Backspace, False, 1);
+    // XTestFakeKeyEvent (dsp, IUK_Backspace, True, 1);
+    // XTestFakeKeyEvent (dsp, IUK_Backspace, False, 1);
 
     // DEBUG
     cerr << "-- DelChar is called --" << endl;
+}
+
+static void ibus_unikey_engine_reset (IBusEngine* engine) {
+    // DEBUG
+    // cerr << "-- Reset is called --" << endl;
+    unikey = (IBusUnikeyEngine*) engine;
+
+    UnikeyResetBuf ();
+
+    // FIXME
+    // This is probably not necessary because the string is always committed
+    if (unikey->preeditstr->length () > 0) {
+        // ibus_unikey_engine_commit_string
+        //     (engine, getPreeditStr ().c_str ());
+        ibus_unikey_engine_update_preedit_string2
+            (engine, getPreeditStr ().c_str () ,true);
+
+        unikey->preeditstr->clear ();
+    }
+    // unikey->preeditstr->clear ();
+
+    parent_class->reset (engine);
 }
 
 static void ibus_unikey_engine_commit_string
@@ -346,6 +299,70 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
 
     ibus_unikey_engine_reset (engine);
     return false;
+}
+
+void processBackspace (IBusEngine *engine) {
+    // Do delete some characters
+    if (isOneCharToDelete (getPreeditStr ().length (), UnikeyBackspaces)) {
+        ibus_unikey_engine_delete_a_char (engine);
+        unikey->preeditstr->clear ();
+    } else {
+        // DEBUG
+        cerr << "; Erase chars and update preedit string" << endl;
+        ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
+        ibus_unikey_engine_update_preedit_string2
+            (engine, getPreeditStr ().c_str (), true);
+    }
+
+    // Changing the position of the tone after pressing backspace
+    if (UnikeyBufChars > 0) {
+        adjustTonePosition ();
+        ibus_unikey_engine_update_preedit_string2
+            (engine, getPreeditStr ().c_str (), true);
+    }
+}
+
+void adjustTonePosition () {
+    if (unikey->oc == CONV_CHARSET_XUTF8) {
+        unikey->preeditstr->append
+            ((const gchar*) UnikeyBuf, UnikeyBufChars);
+    } else {
+        static unsigned char buf[CONVERT_BUF_SIZE];
+        int bufSize = CONVERT_BUF_SIZE;
+
+        latinToUtf (buf, UnikeyBuf, UnikeyBufChars, &bufSize);
+        unikey->preeditstr->append
+            ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
+    }
+}
+
+void processUkEngineData (IBusEngine *engine, guint keyval) {
+    if (UnikeyBackspaces > 0) {
+        if (isOneCharToDelete (getPreeditStr ().length (), UnikeyBackspaces)) {
+            unikey->preeditstr->clear ();
+        } else {
+            ibus_unikey_engine_erase_chars (engine, UnikeyBackspaces);
+        }
+    }
+    if (UnikeyBufChars > 0) {
+        if (unikey->oc == CONV_CHARSET_XUTF8) {
+            unikey->preeditstr->append
+                ((const gchar*) UnikeyBuf, UnikeyBufChars);
+        } else {
+            static unsigned char buf[CONVERT_BUF_SIZE];
+            int bufSize = CONVERT_BUF_SIZE;
+
+            latinToUtf (buf, UnikeyBuf, UnikeyBufChars, &bufSize);
+            unikey->preeditstr->append
+                ((const gchar*)buf, CONVERT_BUF_SIZE - bufSize);
+        }
+    } else if (keyval != IBUS_Shift_L && keyval != IBUS_Shift_R) { // if ukengine is not processed
+        static int n;
+        static char s[6];
+
+        n = g_unichar_to_utf8 (keyval, s); // convert ucs4 to utf8 char
+        unikey->preeditstr->append (s, n);
+    }
 }
 
 static void* thread_mouse_capture (void* data) {
@@ -580,28 +597,6 @@ static void ibus_unikey_engine_focus_out (IBusEngine* engine) {
     parent_class->focus_out (engine);
 }
 
-static void ibus_unikey_engine_reset (IBusEngine* engine) {
-    // DEBUG
-    // cerr << "-- Reset is called --" << endl;
-    unikey = (IBusUnikeyEngine*) engine;
-
-    UnikeyResetBuf ();
-
-    // FIXME
-    // This is probably not necessary because the string is always committed
-    if (unikey->preeditstr->length () > 0) {
-        // ibus_unikey_engine_commit_string
-        //     (engine, getPreeditStr ().c_str ());
-        ibus_unikey_engine_update_preedit_string2
-            (engine, getPreeditStr ().c_str () ,true);
-
-        unikey->preeditstr->clear ();
-    }
-    // unikey->preeditstr->clear ();
-
-    parent_class->reset (engine);
-}
-
 static void ibus_unikey_engine_enable (IBusEngine* engine) {
     parent_class->enable (engine);
 }
@@ -783,66 +778,7 @@ static void ibus_unikey_engine_property_activate (IBusEngine* engine,
     ibus_unikey_engine_focus_in (engine);
 }
 
-static void addMenu (IBusPropList *engineProp,
-                     const gchar *key,
-                     IBusPropType type,
-                     IBusText *label,
-                     const gchar *icon,
-                     IBusText *tooltip,
-                     gboolean sensitive,
-                     gboolean visible,
-                     IBusPropState state,
-                     IBusPropList *prop_list) {
-    IBusProperty *prop;
-
-    prop = ibus_property_new (key, type, label, icon, tooltip,
-                              sensitive, visible, state, prop_list);
-    ibus_prop_list_append (engineProp, prop);
-}
-
-IBusText *makeIbusText (const gchar *str) {
-    return ibus_text_new_from_static_string (str);
-}
-
-void createIMMenu (IBusUnikeyEngine* engine) {
-    IBusText *label;
-    gchar name[32];
-
-    for (int i = 0; i < NUM_INPUTMETHOD; i++) {
-        label = makeIbusText (Unikey_IMNames[i]);
-        sprintf (name, CONFIG_INPUTMETHOD"_%s", Unikey_IMNames[i]);
-
-        addMenu (engine->menu_im,
-                 name, PROP_TYPE_RADIO, label, "",
-                 makeIbusText (""), TRUE, TRUE,
-                 (Unikey_IM[i] == engine->im) ?
-                 PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
-                 NULL);
-    }
-}
-
-void createOutputCharsetMenu (IBusUnikeyEngine *engine) {
-    IBusText *label;
-    gchar name[32];
-
-    for (int i = 0; i < NUM_OUTPUTCHARSET; i++) {
-        label = makeIbusText (Unikey_OCNames[i]);
-        sprintf (name, CONFIG_OUTPUTCHARSET"_%s", Unikey_OCNames[i]);
-
-        addMenu (engine->menu_oc,
-                 name, PROP_TYPE_RADIO, label, "",
-                 makeIbusText (""), TRUE, TRUE,
-                 (Unikey_OC[i] == engine->oc) ?
-                 PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
-                 NULL);
-    }
-
-}
-
-static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey) {
-    IBusText* label,* tooltip;
-    guint i;
-
+static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine *unikey) {
     unikey->prop_list = ibus_prop_list_new ();
     unikey->menu_im   = ibus_prop_list_new ();
     unikey->menu_oc   = ibus_prop_list_new ();
@@ -852,88 +788,11 @@ static void ibus_unikey_engine_create_property_list (IBusUnikeyEngine* unikey) {
 
     createIMMenu (unikey);
     createOutputCharsetMenu (unikey);
+    createOptionMenu (unikey);
 
-// create option menu (for configure unikey)
-    // add option property
-
-    // --create and add spellcheck property
-    label = makeIbusText (_("Enable spell check"));
-    tooltip = makeIbusText
-        (_("If enable, you can decrease mistake when typing"));
-    addMenu (unikey->menu_opt,
-             CONFIG_SPELLCHECK, PROP_TYPE_TOGGLE, label, "",
-             tooltip, TRUE, TRUE,
-             (unikey->ukopt.spellCheckEnabled == 1) ?
-             PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
-             NULL);
-
-    // --create and add macroEnabled property
-    label = makeIbusText (_("Enable Macro"));
-    tooltip = makeIbusText ("");
-    addMenu (unikey->menu_opt,
-             CONFIG_MACROENABLED, PROP_TYPE_TOGGLE, label, "",
-             tooltip, TRUE, TRUE,
-             (unikey->ukopt.macroEnabled == 1) ?
-             PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
-             NULL);
-
-    // --create and add MouseCapture property
-    label = makeIbusText (_("Capture mouse event"));
-    tooltip =
-        makeIbusText
-        (_("Auto send PreEdit string to Application when mouse move or click"));
-    addMenu (unikey->menu_opt,
-             CONFIG_MOUSECAPTURE, PROP_TYPE_TOGGLE, label, "",
-             tooltip, TRUE, TRUE,
-             (unikey->mouse_capture == 1) ?
-             PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
-             NULL);
-
-    // --separator
-    addMenu (unikey->menu_opt, "", PROP_TYPE_SEPARATOR,
-             NULL, "", NULL, TRUE, TRUE,
-             PROP_STATE_UNCHECKED, NULL);
-
-    // --create and add Launch Setup GUI property
-    label = makeIbusText (_("Full setup..."));
-    tooltip = makeIbusText
-        (_("Full setup utility for IBus-Unikey"));
-    addMenu (unikey->menu_opt,
-             "RunSetupGUI", PROP_TYPE_NORMAL, label, "",
-             tooltip, TRUE, TRUE, PROP_STATE_UNCHECKED, NULL);
-// END create option menu
-
-// create top menu
-    // add item
-    // -- add input method menu
-    for (i = 0; i < NUM_INPUTMETHOD; i++) {
-        if (Unikey_IM[i] == unikey->im)
-            break;
-    }
-    label = makeIbusText (Unikey_IMNames[i]);
-    tooltip = makeIbusText (_("Choose input method"));
-    addMenu (unikey->prop_list,
-             CONFIG_INPUTMETHOD, PROP_TYPE_MENU, label, "",
-             tooltip, TRUE, TRUE, PROP_STATE_UNCHECKED, unikey->menu_im);
-
-    // -- add output charset menu
-    for (i = 0; i < NUM_OUTPUTCHARSET; i++)
-        if (Unikey_OC[i] == unikey->oc)
-            break;
-
-    label = makeIbusText (Unikey_OCNames[i]);
-    tooltip = makeIbusText (_("Choose output charset"));
-    addMenu (unikey->prop_list, CONFIG_OUTPUTCHARSET,
-             PROP_TYPE_MENU, label, "", tooltip,
-             TRUE, TRUE, PROP_STATE_UNCHECKED, unikey->menu_oc);
-
-    // -- add option menu
-    label = makeIbusText (_("Options"));
-    tooltip = makeIbusText (_("Options for Unikey"));
-    addMenu (unikey->prop_list,
-             "Options", PROP_TYPE_MENU, label, "gtk-preferences",
-             tooltip, TRUE, TRUE, PROP_STATE_UNCHECKED, unikey->menu_opt);
-// end top menu
+    createTopIMMenu (unikey);
+    createTopOutputCharsetMenu (unikey);
+    createTopOptionMenu (unikey);
 }
 
 //
@@ -963,4 +822,130 @@ static guint getIbusTextLength (string str) {
     IBusText *text;
     text = ibus_text_new_from_static_string ((const gchar *) str.c_str ());
     return ibus_text_get_length (text);
+}
+
+static void createIMMenu (IBusUnikeyEngine* engine) {
+    gchar name[32];
+
+    for (guint i = 0; i < NUM_INPUTMETHOD; i++) {
+        sprintf (name, CONFIG_INPUTMETHOD"_%s", Unikey_IMNames[i]);
+
+        addMenu (engine->menu_im, name, PROP_TYPE_RADIO,
+                 makeIbusText (Unikey_IMNames[i]), "",
+                 makeIbusText (""), TRUE, TRUE,
+                 (Unikey_IM[i] == engine->im) ?
+                 PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
+                 NULL);
+    }
+}
+
+static void createOutputCharsetMenu (IBusUnikeyEngine *engine) {
+    gchar name[32];
+
+    for (guint i = 0; i < NUM_OUTPUTCHARSET; i++) {
+        sprintf (name, CONFIG_OUTPUTCHARSET"_%s", Unikey_OCNames[i]);
+
+        addMenu (engine->menu_oc, name, PROP_TYPE_RADIO,
+                 makeIbusText (Unikey_OCNames[i]), "",
+                 makeIbusText (""), TRUE, TRUE,
+                 (Unikey_OC[i] == engine->oc) ?
+                 PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
+                 NULL);
+    }
+
+}
+
+static void addMenu (IBusPropList *engineProp,
+                     const gchar *key,
+                     IBusPropType type,
+                     IBusText *label,
+                     const gchar *icon,
+                     IBusText *tooltip,
+                     gboolean sensitive,
+                     gboolean visible,
+                     IBusPropState state,
+                     IBusPropList *prop_list) {
+    IBusProperty *prop;
+
+    prop = ibus_property_new (key, type, label, icon, tooltip,
+                              sensitive, visible, state, prop_list);
+    ibus_prop_list_append (engineProp, prop);
+}
+
+static void createOptionMenu (IBusUnikeyEngine *engine) {
+    // Spellcheck option
+    addMenu (engine->menu_opt, CONFIG_SPELLCHECK, PROP_TYPE_TOGGLE,
+             makeIbusText (_("Enable spell check")), "",
+             makeIbusText (_("If enable, you can decrease mistake when typing")),
+             TRUE, TRUE, (engine->ukopt.spellCheckEnabled == 1) ?
+             PROP_STATE_CHECKED : PROP_STATE_UNCHECKED, NULL);
+
+    // Macro option
+    addMenu (engine->menu_opt, CONFIG_MACROENABLED, PROP_TYPE_TOGGLE,
+             makeIbusText (_("Enable Macro")), "",
+             makeIbusText (""),
+             TRUE, TRUE, (engine->ukopt.macroEnabled == 1) ?
+             PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
+             NULL);
+
+
+    addMenu (engine->menu_opt, CONFIG_MOUSECAPTURE, PROP_TYPE_TOGGLE,
+             makeIbusText (_("Capture mouse event")), "",
+             makeIbusText
+             (_("Auto send PreEdit string to application when mouse is moved or clicked")),
+             TRUE, TRUE, (engine->mouse_capture == 1) ?
+             PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
+             NULL);
+
+    // Seperator
+    addMenu (engine->menu_opt, "", PROP_TYPE_SEPARATOR,
+             NULL, "", NULL,
+             TRUE, TRUE, PROP_STATE_UNCHECKED,
+             NULL);
+
+    // Launch Setup GUI option
+    addMenu (engine->menu_opt, "RunSetupGUI", PROP_TYPE_NORMAL,
+             makeIbusText (_("Full setup...")), "",
+             makeIbusText (_("Full setup utility for IBus-Unikey")),
+             TRUE, TRUE, PROP_STATE_UNCHECKED, NULL);
+}
+
+static guint getIdxCurrentIM (IBusUnikeyEngine *engine) {
+    for (guint i = 0; i < NUM_INPUTMETHOD; i++)
+        if (Unikey_IM[i] == engine->im)
+            return i;
+    return 0;
+}
+
+static void createTopIMMenu (IBusUnikeyEngine *engine) {
+    addMenu (engine->prop_list, CONFIG_INPUTMETHOD, PROP_TYPE_MENU,
+             makeIbusText (Unikey_IMNames[getIdxCurrentIM (engine)]), "",
+             makeIbusText (_("Choose input method")),
+             TRUE, TRUE, PROP_STATE_UNCHECKED, engine->menu_im);
+}
+
+static guint getIdxCurrentOutputCharset (IBusUnikeyEngine *engine) {
+    for (guint i = 0; i < NUM_OUTPUTCHARSET; i++)
+        if (Unikey_OC[i] == engine->oc)
+            return i;
+    return 0;
+}
+
+static void createTopOutputCharsetMenu (IBusUnikeyEngine *engine) {
+    addMenu (engine->prop_list, CONFIG_OUTPUTCHARSET, PROP_TYPE_MENU,
+             makeIbusText
+             (Unikey_OCNames[getIdxCurrentOutputCharset (engine)]), "",
+             makeIbusText (_("Choose output charset")),
+             TRUE, TRUE, PROP_STATE_UNCHECKED, engine->menu_oc);
+}
+
+static void createTopOptionMenu (IBusUnikeyEngine *engine) {
+    addMenu (engine->prop_list, "Options", PROP_TYPE_MENU,
+             makeIbusText (_("Options")), "gtk-preferences",
+             makeIbusText (_("Options for Unikey")),
+             TRUE, TRUE, PROP_STATE_UNCHECKED, engine->menu_opt);
+}
+
+IBusText *makeIbusText (const gchar *str) {
+    return ibus_text_new_from_static_string (str);
 }
