@@ -77,6 +77,16 @@ static void createOptionMenu (IBusUnikeyEngine *engine);
 static void createTopIMMenu (IBusUnikeyEngine *engine);
 static void createTopOutputCharsetMenu (IBusUnikeyEngine *engine);
 static void createTopOptionMenu (IBusUnikeyEngine *engine);
+static bool isPropIMActivated (const gchar *prop_name);
+static bool isPropOutputCharsetActivated (const gchar *prop_name);
+static bool isPropRunSetupGUIActivated (const gchar *prop_name);
+static bool isPropMouseCaptureActivated (const gchar *prop_name);
+static bool isPropMacroEnabledActivated (const gchar *prop_name);
+static bool isPropSpellcheckActivated (const gchar *prop_name);
+static guint getIdxCurrentPropIM (const gchar *prop_name);
+static bool updatePropIMLabel (IBusUnikeyEngine *unikey, guint idxIM);
+static bool updatePropIMState (IBusUnikeyEngine *unikey,
+                               const gchar *prop_name);
 
 /* Engine setup functions */
 void ibus_unikey_init (IBusBus* bus);

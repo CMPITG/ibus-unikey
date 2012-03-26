@@ -605,61 +605,30 @@ static void ibus_unikey_engine_disable (IBusEngine* engine) {
     parent_class->disable (engine);
 }
 
-static void ibus_unikey_engine_property_activate (IBusEngine* engine,
-                                                  const gchar* prop_name,
+// CUT-HERE
+
+static void ibus_unikey_engine_property_activate (IBusEngine *engine,
+                                                  const gchar *prop_name,
                                                   guint prop_state) {
     IBusProperty* prop;
     IBusText* label;
-    guint i, j;
+    guint i, j, idxCurrentPropIM;
 
     unikey = (IBusUnikeyEngine*) engine;
 
-    // input method active
-    if (strncmp (prop_name, CONFIG_INPUTMETHOD,
-                 strlen (CONFIG_INPUTMETHOD)) == 0) {
-        for (i = 0; i < NUM_INPUTMETHOD; i++) {
-            if (strcmp (prop_name + strlen (CONFIG_INPUTMETHOD) + 1,
-                        Unikey_IMNames[i]) == 0) {
-                unikey->im = Unikey_IM[i];
+    if (isPropIMActivated (prop_name)) {
+        idxCurrentPropIM = getIdxCurrentPropIM (prop_name);
+        unikey->im = Unikey_IM[idxCurrentPropIM];
+        ibus_unikey_config_set_string (config, CONFIG_SECTION,
+                                       CONFIG_INPUTMETHOD,
+                                       Unikey_IMNames[idxCurrentPropIM]);
+        if (!updatePropIMLabel (unikey, idxCurrentPropIM)) // Failed to update label
+            return;
+        if (!updatePropIMState (unikey, prop_name)) // Failed to update state
+            return;
+    }
 
-                ibus_unikey_config_set_string (config,
-                                               CONFIG_SECTION,
-                                               CONFIG_INPUTMETHOD,
-                                               Unikey_IMNames[i]);
-
-                // update label
-                for (j = 0; j < unikey->prop_list->properties->len; j++) {
-                    prop = ibus_prop_list_get (unikey->prop_list, j);
-                    if (prop == NULL)
-                        return;
-                    else if (strcmp (prop->key, CONFIG_INPUTMETHOD) == 0) {
-                        label =
-                            ibus_text_new_from_static_string (Unikey_IMNames[i]);
-                        ibus_property_set_label (prop, label);
-                        break;
-                    }
-                } // end update label
-
-                // update property state
-                for (j = 0; j < unikey->menu_im->properties->len; j++) {
-                    prop = ibus_prop_list_get (unikey->menu_im, j);
-                    if (prop == NULL)
-                        return;
-                    else if (strcmp (prop->key, prop_name) == 0)
-                        prop->state = PROP_STATE_CHECKED;
-                    else
-                        prop->state = PROP_STATE_UNCHECKED;
-                } // end update property state
-
-                break;
-            }
-        }
-    } // end input method active
-
-    // output charset active
-    else if (strncmp (prop_name,
-                      CONFIG_OUTPUTCHARSET,
-                      strlen (CONFIG_OUTPUTCHARSET)) == 0) {
+    else if (isPropOutputCharsetActivated (prop_name)) {
         for (i = 0; i < NUM_OUTPUTCHARSET; i++) {
             if (strcmp (prop_name+strlen (CONFIG_OUTPUTCHARSET) + 1,
                         Unikey_OCNames[i]) == 0) {
@@ -697,10 +666,9 @@ static void ibus_unikey_engine_property_activate (IBusEngine* engine,
                 break;
             }
         }
-    } // end output charset active
+    }
 
-    // spellcheck active
-    else if (strcmp (prop_name, CONFIG_SPELLCHECK) == 0) {
+    else if (isPropSpellcheckActivated (prop_name)) {
         unikey->ukopt.spellCheckEnabled = !unikey->ukopt.spellCheckEnabled;
         ibus_unikey_config_set_boolean (config,
                                         CONFIG_SECTION,
@@ -719,10 +687,9 @@ static void ibus_unikey_engine_property_activate (IBusEngine* engine,
                 break;
             }
         } // end update state
-    } // end spellcheck active
+    }
 
-    // MacroEnabled active
-    else if (strcmp (prop_name, CONFIG_MACROENABLED) == 0) {
+    else if (isPropMacroEnabledActivated (prop_name)) {
         unikey->ukopt.macroEnabled = !unikey->ukopt.macroEnabled;
         ibus_unikey_config_set_boolean (config,
                                         CONFIG_SECTION,
@@ -741,10 +708,9 @@ static void ibus_unikey_engine_property_activate (IBusEngine* engine,
                 break;
             }
         } // end update state
-    } // end MacroEnabled active
+    }
 
-    // MouseCapture active
-    else if (strcmp (prop_name, CONFIG_MOUSECAPTURE) == 0) {
+    else if (isPropMouseCaptureActivated (prop_name)) {
         unikey->mouse_capture = !unikey->mouse_capture;
 
         ibus_unikey_config_set_boolean (config,
@@ -764,15 +730,13 @@ static void ibus_unikey_engine_property_activate (IBusEngine* engine,
                 break;
             }
         } // end update state
-    } // end MouseCapture active
+    }
 
-
-    // if Run setup
-    else if (strcmp (prop_name, "RunSetupGUI") == 0) {
+    else if (isPropRunSetupGUIActivated (prop_name)) {
         pthread_t pid;
         pthread_create (&pid, NULL, &thread_run_setup, NULL);
         pthread_detach (pid);
-    } // END Run setup
+    }
 
     ibus_unikey_engine_focus_out (engine);
     ibus_unikey_engine_focus_in (engine);
@@ -948,4 +912,70 @@ static void createTopOptionMenu (IBusUnikeyEngine *engine) {
 
 IBusText *makeIbusText (const gchar *str) {
     return ibus_text_new_from_static_string (str);
+}
+
+static bool isPropIMActivated (const gchar *prop_name) {
+    return strncmp (prop_name, CONFIG_INPUTMETHOD,
+                    strlen (CONFIG_INPUTMETHOD)) == 0;
+}
+
+static bool isPropOutputCharsetActivated (const gchar *prop_name) {
+    return strncmp (prop_name, CONFIG_OUTPUTCHARSET,
+                    strlen (CONFIG_OUTPUTCHARSET)) == 0;
+}
+
+static bool isPropSpellcheckActivated (const gchar *prop_name) {
+    return strcmp (prop_name, CONFIG_SPELLCHECK) == 0;
+}
+
+static bool isPropMacroEnabledActivated (const gchar *prop_name) {
+    return strcmp (prop_name, CONFIG_MACROENABLED) == 0;
+}
+
+static bool isPropMouseCaptureActivated (const gchar *prop_name) {
+    return strcmp (prop_name, CONFIG_MOUSECAPTURE) == 0;
+}
+
+static bool isPropRunSetupGUIActivated (const gchar *prop_name) {
+    return strcmp (prop_name, "RunSetupGUI") == 0;
+}
+
+static guint getIdxCurrentPropIM (const gchar *prop_name) {
+    for (guint i = 0; i < NUM_INPUTMETHOD; i++)
+        if (strcmp (prop_name + strlen (CONFIG_INPUTMETHOD) + 1,
+                    Unikey_IMNames[i]) == 0)
+            return i;
+    return 0;
+}
+
+static bool updatePropIMLabel (IBusUnikeyEngine *unikey, guint idxIM) {
+    IBusProperty *prop;
+
+    for (guint i = 0; i < unikey->prop_list->properties->len; i++) {
+        prop = ibus_prop_list_get (unikey->prop_list, i);
+        if (prop == NULL)
+            return false;
+        else if (strcmp (prop->key, CONFIG_INPUTMETHOD) == 0) {
+            ibus_property_set_label (prop, makeIbusText
+                                     (Unikey_IMNames[idxIM]));
+            break;
+        }
+    }
+    return true;
+}
+
+static bool updatePropIMState (IBusUnikeyEngine *unikey,
+                               const gchar *prop_name) {
+    IBusProperty *prop;
+
+    for (guint i = 0; i < unikey->menu_im->properties->len; i++) {
+        prop = ibus_prop_list_get (unikey->menu_im, i);
+        if (prop == NULL)
+            return false;
+        else if (strcmp (prop->key, prop_name) == 0)
+            prop->state = PROP_STATE_CHECKED;
+        else
+            prop->state = PROP_STATE_UNCHECKED;
+    }
+    return true;
 }
