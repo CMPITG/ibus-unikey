@@ -54,6 +54,7 @@ static Display* dsp;
 static KeyCode IUK_Backspace;
 
 static bool pendingCommitted = false;
+static bool pendingClear = false;
 static gint nBackspaces = 0;
 
 static string oldPreeditStr = "";
@@ -98,7 +99,8 @@ static void ibus_unikey_engine_reset (IBusEngine* engine) {
         ibus_unikey_engine_update_preedit_string2
             (engine, getPreeditStr ().c_str () ,true);
 
-        unikey->preeditstr->clear ();
+        pendingClear = true;
+        // unikey->preeditstr->clear ();
     }
     // unikey->preeditstr->clear ();
 
@@ -132,7 +134,7 @@ static void ibus_unikey_engine_update_preedit_string2
     // Then commit the new one
     if (getIbusTextLength (oldPreeditStr) == 0) {
         ibus_unikey_engine_commit_string (engine, getPreeditStr ().c_str ());
-        oldPreeditStr = getPreeditStr ();
+        // oldPreeditStr = getPreeditStr ();
     }
 
     // DEBUG
@@ -199,6 +201,7 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
     if (modifiers & IBUS_RELEASE_MASK)
         return false;
 
+    // Fake Backspaces processing
     if (isBackspacePressed (keyval) && pendingCommitted) {
         cerr << "    ;;; Fake Backspace caught! " << nBackspaces << " ;;;" << endl;
         if (nBackspaces == 1) {
@@ -206,6 +209,11 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
             pendingCommitted = false;
             oldPreeditStr = getPreeditStr ();
             nBackspaces = 0;
+            if (pendingClear) {
+                unikey->preeditstr->clear();
+                oldPreeditStr = "";
+                pendingClear = false;
+            }
             return true;
         }
         nBackspaces--;
@@ -228,7 +236,10 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
     }
 
     if (wordIsTerminated (keyval, modifiers)) {
-        ibus_unikey_engine_reset (engine);
+        // ibus_unikey_engine_reset (engine);
+        unikey->preeditstr->clear ();
+        oldPreeditStr = "";
+        UnikeyResetBuf ();
         return false;
     }
 
