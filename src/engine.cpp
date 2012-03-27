@@ -59,7 +59,7 @@ static gint nBackspaces = 0;
 static string oldPreeditStr = "";
 
 static void ibus_unikey_engine_delete_a_char (IBusEngine *engine) {
-    ibus_engine_delete_surrounding_text (engine, -1, 1);
+    // ibus_engine_delete_surrounding_text (engine, -1, 1);
 
     // Method #2 -- doesn't work
     // char buf[20];
@@ -77,11 +77,10 @@ static void ibus_unikey_engine_delete_a_char (IBusEngine *engine) {
     // ibus_unikey_engine_commit_string (engine, buf);
 
     // Method #5
-    // XTestFakeKeyEvent (dsp, IUK_Backspace, True, 1);
-    // XTestFakeKeyEvent (dsp, IUK_Backspace, False, 1);
-
-    // DEBUG
-    cerr << "-- DelChar is called --" << endl;
+    XTestFakeKeyEvent (dsp, IUK_Backspace, True, 0);
+    XTestFakeKeyEvent (dsp, IUK_Backspace, False, 0);
+    pendingCommitted = true;
+    nBackspaces++;
 }
 
 static void ibus_unikey_engine_reset (IBusEngine* engine) {
@@ -110,6 +109,8 @@ static void ibus_unikey_engine_commit_string
 (IBusEngine *engine, const gchar *string) {
     IBusText *text;
 
+    // BEUG
+    cerr << "-- Committing string" << endl;
     text = ibus_text_new_from_static_string (string);
     ibus_engine_commit_text (engine, text);
 }
@@ -120,13 +121,19 @@ static void ibus_unikey_engine_update_preedit_string2
 
     // Delete the old preedit string.  Note that the multibyte-string
     // length is different from usual string length.
-    for (guint i = 0; i < getIbusTextLength (oldPreeditStr); i++)
-        ibus_unikey_engine_delete_a_char (engine);
+    if (getIbusTextLength (oldPreeditStr) > 0) {
+        for (guint i = 0; i < getIbusTextLength (oldPreeditStr) + 1; i++) {
+            // DEBUG
+            cerr << "-- DelChar is called --" << endl;
+            ibus_unikey_engine_delete_a_char (engine);
+        }
+    }
 
     // Then commit the new one
-    ibus_unikey_engine_commit_string (engine, getPreeditStr ().c_str ());
-
-    oldPreeditStr = getPreeditStr ();
+    if (getIbusTextLength (oldPreeditStr) == 0) {
+        ibus_unikey_engine_commit_string (engine, getPreeditStr ().c_str ());
+        oldPreeditStr = getPreeditStr ();
+    }
 
     // DEBUG
     cerr << "[[[ Inside update preedit string ]]]" << endl
@@ -192,19 +199,29 @@ static gboolean ibus_unikey_engine_process_key_event_preedit
     if (modifiers & IBUS_RELEASE_MASK)
         return false;
 
+    if (isBackspacePressed (keyval) && pendingCommitted) {
+        cerr << "    ;;; Fake Backspace caught! " << nBackspaces << " ;;;" << endl;
+        if (nBackspaces == 1) {
+            ibus_unikey_engine_commit_string (engine, getPreeditStr ().c_str ());
+            pendingCommitted = false;
+            oldPreeditStr = getPreeditStr ();
+            nBackspaces = 0;
+            return true;
+        }
+        nBackspaces--;
+        return false;
+    }
+
+    nBackspaces = 0;
     oldPreeditStr = getPreeditStr ();
 
     if (isBackspacePressed (keyval)) {
-        // DEBUG
-        cerr << "``` Handling Backspace..." << endl;
         UnikeyBackspacePress ();
 
         if (nothingToDelete (UnikeyBackspaces, getPreeditStr ())) {
             ibus_unikey_engine_reset (engine);
             return false;
         } else {
-            // DEBUG
-            cerr << "``` Processing Backspace..." << endl;
             processBackspace (engine);
         }
         return true;
